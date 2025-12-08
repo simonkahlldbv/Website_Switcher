@@ -39,7 +39,7 @@ body {
   background: #555;
 }
 
-/* Vergleichsbutton */
+/* Vergleich starten */
 #compare-start {
   margin-top: auto;
   padding: 14px;
@@ -69,70 +69,71 @@ body {
   height: 80%;
 }
 
-/* Vergleichsauswahl Overlay */
-#compare-select {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0,0,0,0.7);
-  display: none;
-  justify-content: center;
-  align-items: center;
-  z-index: 9999;
-}
-
-#compare-box {
-  background: white;
-  padding: 30px;
-  border-radius: 12px;
-  width: 350px;
-  text-align: center;
-}
-
-select {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 20px;
-  border-radius: 6px;
-}
-
-#start-compare-btn {
-  padding: 12px;
-  width: 100%;
-  background: #0066ff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-}
-
-/* ------- V E R G L E I C H ------- */
+/* ---------------- Vergleichsmodus --------------- */
 
 #compare-wrapper {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: white; /* Hintergrund weiß */
+  inset: 0;
+  background: white;
   z-index: 10000;
   display: none;
   overflow: hidden;
 }
 
-/* Beide Modelle fullscreen übereinander */
+/* Zurück Button */
+#back-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: #222;
+  color: white;
+  padding: 12px 18px;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 10002;
+  font-size: 16px;
+  border: none;
+}
+
+/* Linke & rechte Jahresauswahl */
+.compare-side-menu {
+  position: absolute;
+  top: 60px;
+  width: 150px;
+  background: rgba(0,0,0,0.5);
+  padding: 10px;
+  z-index: 10002;
+  border-radius: 10px;
+}
+
+#left-menu { left: 20px; }
+#right-menu { right: 20px; }
+
+.compare-btn {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 10px;
+  background: #444;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.compare-btn:hover {
+  background: #666;
+}
+
+/* Modelle */
 #compare-left,
 #compare-right {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100vw;
   height: 100vh;
   object-fit: contain;
 }
 
-/* Rechtes Modell wird abgeschnitten */
 #compare-right {
   clip-path: inset(0 0 0 50vw);
 }
@@ -163,78 +164,76 @@ select {
   <button class="year-btn" onclick="showModel('1630.glb')">1630</button>
   <button class="year-btn" onclick="showModel('1936.glb')">1936</button>
 
-  <button id="compare-start" onclick="openCompareSelection()">Vergleichen</button>
+  <button id="compare-start" onclick="enterCompareMode()">Vergleichen</button>
 </div>
 
-<!-- MAIN MODEL VIEWER -->
+<!-- Hauptmodell -->
 <div id="main-viewer">
   <model-viewer id="main-model" camera-controls auto-rotate></model-viewer>
 </div>
 
-<!-- Vergleichs-Auswahl -->
-<div id="compare-select">
-  <div id="compare-box">
-    <h3>Modelle vergleichen</h3>
-
-    <select id="modelA">
-      <option value="1150.glb">1150</option>
-      <option value="1175.glb">1175</option>
-      <option value="1374.glb">1374</option>
-      <option value="1550.glb">1550</option>
-      <option value="1630.glb">1630</option>
-      <option value="1936.glb">1936</option>
-    </select>
-
-    <select id="modelB">
-      <option value="1150.glb">1150</option>
-      <option value="1175.glb">1175</option>
-      <option value="1374.glb">1374</option>
-      <option value="1550.glb">1550</option>
-      <option value="1630.glb">1630</option>
-      <option value="1936.glb">1936</option>
-    </select>
-
-    <button id="start-compare-btn" onclick="startComparison()">Starten</button>
-  </div>
-</div>
-
-<!-- Vergleichs-Slider -->
+<!-- Vergleichsmodus -->
 <div id="compare-wrapper">
+
+  <button id="back-btn" onclick="exitCompareMode()">← Zurück</button>
+
+  <!-- Linke Auswahl -->
+  <div id="left-menu" class="compare-side-menu">
+    <button class="compare-btn" onclick="setModelLeft('1150.glb')">1150</button>
+    <button class="compare-btn" onclick="setModelLeft('1175.glb')">1175</button>
+    <button class="compare-btn" onclick="setModelLeft('1374.glb')">1374</button>
+    <button class="compare-btn" onclick="setModelLeft('1550.glb')">1550</button>
+    <button class="compare-btn" onclick="setModelLeft('1630.glb')">1630</button>
+    <button class="compare-btn" onclick="setModelLeft('1936.glb')">1936</button>
+  </div>
+
+  <!-- Rechte Auswahl -->
+  <div id="right-menu" class="compare-side-menu">
+    <button class="compare-btn" onclick="setModelRight('1150.glb')">1150</button>
+    <button class="compare-btn" onclick="setModelRight('1175.glb')">1175</button>
+    <button class="compare-btn" onclick="setModelRight('1374.glb')">1374</button>
+    <button class="compare-btn" onclick="setModelRight('1550.glb')">1550</button>
+    <button class="compare-btn" onclick="setModelRight('1630.glb')">1630</button>
+    <button class="compare-btn" onclick="setModelRight('1936.glb')">1936</button>
+  </div>
+
   <model-viewer id="compare-left" camera-controls></model-viewer>
   <model-viewer id="compare-right" camera-controls></model-viewer>
+
   <div id="compare-slider"></div>
 </div>
 
 <script>
-/* Modell in der Mitte anzeigen */
+/* Hauptmodell anzeigen */
 function showModel(file) {
   document.getElementById("main-model").src = file;
 }
 
-/* Vergleichsauswahl öffnen */
-function openCompareSelection() {
-  document.getElementById("compare-select").style.display = "flex";
-}
-
 /* Vergleich starten */
-function startComparison() {
-  document.getElementById("compare-select").style.display = "none";
+function enterCompareMode() {
+  document.getElementById("compare-wrapper").style.display = "block";
 
-  const A = document.getElementById("modelA").value;
-  const B = document.getElementById("modelB").value;
-
-  const wrapper = document.getElementById("compare-wrapper");
-  wrapper.style.display = "block";
-
-  document.getElementById("compare-left").src = A;
-  document.getElementById("compare-right").src = B;
-
-  // Slider mittig starten
-  document.getElementById("compare-slider").style.left = "50vw";
-  document.getElementById("compare-right").style.clipPath = "inset(0 0 0 50vw)";
+  // beide Seiten auf das aktuell ausgewählte Modell setzen
+  const current = document.getElementById("main-model").src;
+  document.getElementById("compare-left").src = current;
+  document.getElementById("compare-right").src = current;
 }
 
-/* ---------- Slider Logik ---------- */
+/* Vergleich verlassen */
+function exitCompareMode() {
+  document.getElementById("compare-wrapper").style.display = "none";
+}
+
+/* Modelle im Vergleich setzen */
+function setModelLeft(file) {
+  document.getElementById("compare-left").src = file;
+}
+
+function setModelRight(file) {
+  document.getElementById("compare-right").src = file;
+}
+
+/* Slider Logik */
 const slider = document.getElementById("compare-slider");
 const rightModel = document.getElementById("compare-right");
 
@@ -246,23 +245,15 @@ window.onmouseup = () => dragging = false;
 window.onmousemove = (e) => {
   if (!dragging) return;
 
-  let pos = e.clientX;
+  let pos = Math.min(window.innerWidth, Math.max(0, e.clientX));
 
-  // Begrenzung
-  pos = Math.max(0, Math.min(window.innerWidth, pos));
-
-  // Slider bewegen
   slider.style.left = pos + "px";
-
-  // Rechtes Modell abschneiden
   rightModel.style.clipPath = `inset(0 0 0 ${pos}px)`;
 };
 
-/* ESC schließt den Vergleichsmodus */
+/* ESC beendet Vergleich */
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") {
-    document.getElementById("compare-wrapper").style.display = "none";
-  }
+  if (e.key === "Escape") exitCompareMode();
 });
 </script>
 </body>
