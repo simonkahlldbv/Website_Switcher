@@ -22,6 +22,7 @@ body {
   display: flex;
   flex-direction: column;
   padding: 20px;
+  z-index: 10;
 }
 
 .year-btn {
@@ -39,6 +40,7 @@ body {
   background: #555;
 }
 
+/* Vergleich-Button */
 #compare-start {
   margin-top: auto;
   padding: 14px;
@@ -54,7 +56,7 @@ body {
   background: #0050cc;
 }
 
-/* Hauptbereich */
+/* Main viewer */
 #main-viewer {
   flex: 1;
   background: #f2f2f2;
@@ -68,92 +70,96 @@ body {
   height: 80%;
 }
 
-/* ---------------- Vergleichsmodus --------------- */
+/* Vergleichsmodus Wrapper */
 #compare-wrapper {
   position: fixed;
-  inset: 0;
-  background: white;
-  z-index: 10000;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
   display: none;
+  background: white;
+  z-index: 9999;
   overflow: hidden;
+}
+
+/* Buttons links & rechts im Vergleichsmodus */
+.compare-list {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  z-index: 10001;
+}
+
+#left-buttons { left: 20px; }
+#right-buttons { right: 20px; }
+
+.compare-btn {
+  padding: 10px 16px;
+  background: #222;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.compare-btn:hover {
+  background: #444;
+}
+
+/* Vergleichsmodelle */
+#compare-left,
+#compare-right {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 50%;
+  overflow: hidden;
+}
+
+#compare-left { left: 0; }
+#compare-right { right: 0; }
+
+/* Slider */
+#compare-slider {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 4px;
+  background: red;
+  cursor: ew-resize;
+  left: 50%;
+  z-index: 10002;
 }
 
 /* Zurück Button */
 #back-btn {
   position: absolute;
   top: 20px;
-  left: 20px;
-  background: #222;
+  left: 50%;
+  transform: translateX(-50%);
+  background: black;
   color: white;
-  padding: 12px 18px;
-  border-radius: 6px;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
   cursor: pointer;
-  z-index: 10002;
   font-size: 16px;
-  border: none;
+  z-index: 10003;
 }
 
-/* Linke & rechte Auswahl – vertikal zentriert */
-.compare-side-menu {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 150px;
-  background: rgba(0,0,0,0.5);
-  padding: 10px;
-  z-index: 10002;
-  border-radius: 10px;
-}
-
-#left-menu { left: 20px; }
-#right-menu { right: 20px; }
-
-.compare-btn {
-  width: 100%;
-  margin-bottom: 8px;
-  padding: 10px;
-  background: #444;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.compare-btn:hover {
-  background: #666;
-}
-
-/* Modelle im Vergleich */
-#compare-left,
-#compare-right {
-  position: absolute;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  object-fit: contain;
-}
-
-/* Rechte Modellhälfte maskieren */
-#compare-right {
-  clip-path: inset(0 0 0 50vw);
-}
-
-/* Slider */
-#compare-slider {
-  position: absolute;
-  top: 0;
-  width: 4px;
-  height: 100vh;
-  background: red;
-  cursor: ew-resize;
-  left: 50vw;
-  z-index: 10001;
+#back-btn:hover {
+  background: #333;
 }
 </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
+<!-- Sidebar -->
 <div id="sidebar">
   <h3>Modelle</h3>
 
@@ -164,21 +170,29 @@ body {
   <button class="year-btn" onclick="showModel('1630.glb')">1630</button>
   <button class="year-btn" onclick="showModel('1936.glb')">1936</button>
 
-  <button id="compare-start" onclick="enterCompareMode()">Vergleichen</button>
+  <button id="compare-start" onclick="openCompareMode()">Vergleichen</button>
 </div>
 
 <!-- Hauptmodell -->
 <div id="main-viewer">
-  <model-viewer id="main-model" camera-controls auto-rotate interaction-prompt="none"></model-viewer>
+  <model-viewer id="main-model"
+    camera-controls
+    auto-rotate
+    interaction-prompt="none"
+    interaction-prompt-threshold="0"
+    orientation="0 0 0"
+    min-camera-orbit="auto auto auto"
+    max-camera-orbit="auto auto auto"
+  ></model-viewer>
 </div>
 
 <!-- Vergleichsmodus -->
 <div id="compare-wrapper">
 
-  <button id="back-btn" onclick="exitCompareMode()">← Zurück</button>
+  <button id="back-btn" onclick="closeCompareMode()">Zurück</button>
 
-  <!-- Linke Auswahl -->
-  <div id="left-menu" class="compare-side-menu">
+  <!-- Buttonlisten -->
+  <div id="left-buttons" class="compare-list">
     <button class="compare-btn" onclick="setModelLeft('1150.glb')">1150</button>
     <button class="compare-btn" onclick="setModelLeft('1175.glb')">1175</button>
     <button class="compare-btn" onclick="setModelLeft('1374.glb')">1374</button>
@@ -187,8 +201,7 @@ body {
     <button class="compare-btn" onclick="setModelLeft('1936.glb')">1936</button>
   </div>
 
-  <!-- Rechte Auswahl -->
-  <div id="right-menu" class="compare-side-menu">
+  <div id="right-buttons" class="compare-list">
     <button class="compare-btn" onclick="setModelRight('1150.glb')">1150</button>
     <button class="compare-btn" onclick="setModelRight('1175.glb')">1175</button>
     <button class="compare-btn" onclick="setModelRight('1374.glb')">1374</button>
@@ -197,54 +210,64 @@ body {
     <button class="compare-btn" onclick="setModelRight('1936.glb')">1936</button>
   </div>
 
-  <!-- Vergleichsmodelle -->
-  <model-viewer id="compare-left" camera-controls interaction-prompt="none"></model-viewer>
-  <model-viewer id="compare-right" camera-controls interaction-prompt="none"></model-viewer>
+  <!-- Modelle -->
+  <model-viewer id="compare-left"
+    camera-controls
+    interaction-prompt="none"
+    interaction-prompt-threshold="0"
+    auto-rotate="false"
+    disable-tap
+    touch-action="none"
+    disable-pan
+    orientation="0 0 0"
+    min-camera-orbit="auto auto auto"
+    max-camera-orbit="auto auto auto"
+  ></model-viewer>
+
+  <model-viewer id="compare-right"
+    camera-controls
+    interaction-prompt="none"
+    interaction-prompt-threshold="0"
+    auto-rotate="false"
+    disable-tap
+    touch-action="none"
+    disable-pan
+    orientation="0 0 0"
+    min-camera-orbit="auto auto auto"
+    max-camera-orbit="auto auto auto"
+  ></model-viewer>
 
   <div id="compare-slider"></div>
 </div>
 
 <script>
-/* Hauptmodell laden */
+/* Hauptmodell anzeigen */
 function showModel(file) {
   document.getElementById("main-model").src = file;
 }
 
-/* Vergleich starten */
-function enterCompareMode() {
+/* Vergleich öffnen */
+function openCompareMode() {
   document.getElementById("compare-wrapper").style.display = "block";
-
-  // Autorotate ausschalten
-  document.getElementById("compare-left").removeAttribute("auto-rotate");
-  document.getElementById("compare-right").removeAttribute("auto-rotate");
-
-  // Hauptmodell übernehmen
-  const current = document.getElementById("main-model").src;
-  document.getElementById("compare-left").src = current;
-  document.getElementById("compare-right").src = current;
 }
 
-/* Vergleich verlassen */
-function exitCompareMode() {
+/* Vergleich schließen */
+function closeCompareMode() {
   document.getElementById("compare-wrapper").style.display = "none";
-
-  // Autorotate wieder aktivieren
-  document.getElementById("main-model").setAttribute("auto-rotate", "");
 }
 
-/* Modelle im Vergleich setzen */
+/* Links Modell setzen */
 function setModelLeft(file) {
   document.getElementById("compare-left").src = file;
 }
 
+/* Rechts Modell setzen */
 function setModelRight(file) {
   document.getElementById("compare-right").src = file;
 }
 
-/* Slider Logik */
+/* Slider */
 const slider = document.getElementById("compare-slider");
-const rightModel = document.getElementById("compare-right");
-
 let dragging = false;
 
 slider.onmousedown = () => dragging = true;
@@ -253,15 +276,17 @@ window.onmouseup = () => dragging = false;
 window.onmousemove = (e) => {
   if (!dragging) return;
 
-  let pos = Math.min(window.innerWidth, Math.max(0, e.clientX));
+  const pos = Math.min(window.innerWidth - 50, Math.max(50, e.clientX));
   slider.style.left = pos + "px";
-  rightModel.style.clipPath = `inset(0 0 0 ${pos}px)`;
+  document.getElementById("compare-left").style.width = pos + "px";
+  document.getElementById("compare-right").style.width = (window.innerWidth - pos) + "px";
 };
 
-/* ESC schließt Vergleich */
+/* ESC siehe zurück */
 document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape") exitCompareMode();
+  if (e.key === "Escape") closeCompareMode();
 });
 </script>
+
 </body>
 </html>
