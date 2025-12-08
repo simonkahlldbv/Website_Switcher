@@ -40,7 +40,7 @@ body {
   background: #555;
 }
 
-/* Vergleich-Button */
+/* Vergleich Button */
 #compare-start {
   margin-top: auto;
   padding: 14px;
@@ -70,20 +70,51 @@ body {
   height: 80%;
 }
 
-/* Vergleichsmodus Wrapper */
+/* Vergleichsmodus */
 #compare-wrapper {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
+  width: calc(100vw - 220px);
   height: 100vh;
   display: none;
   background: white;
   z-index: 9999;
   overflow: hidden;
+  margin-left: 220px;
 }
 
-/* Buttons links & rechts im Vergleichsmodus */
+/* Modellcontainer — ÜBEREINANDER */
+#compare-top,
+#compare-bottom {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+#compare-top {
+  top: 0;
+  clip-path: inset(0 0 50% 0);
+}
+
+#compare-bottom {
+  bottom: 0;
+  clip-path: inset(50% 0 0 0);
+}
+
+/* Slider horizontal */
+#compare-slider {
+  position: absolute;
+  width: 100%;
+  height: 4px;
+  background: red;
+  top: 50%;
+  cursor: ns-resize;
+  z-index: 10002;
+}
+
+/* Buttons links & rechts mittig */
 .compare-list {
   position: absolute;
   top: 50%;
@@ -91,11 +122,30 @@ body {
   display: flex;
   flex-direction: column;
   gap: 12px;
-  z-index: 10001;
+  z-index: 10003;
 }
 
 #left-buttons { left: 20px; }
 #right-buttons { right: 20px; }
+
+/* Back Button */
+#back-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: black;
+  color: white;
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+  z-index: 10004;
+}
+
+#back-btn:hover {
+  background: #333;
+}
 
 .compare-btn {
   padding: 10px 16px;
@@ -109,51 +159,6 @@ body {
 
 .compare-btn:hover {
   background: #444;
-}
-
-/* Vergleichsmodelle */
-#compare-left,
-#compare-right {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  width: 50%;
-  overflow: hidden;
-}
-
-#compare-left { left: 0; }
-#compare-right { right: 0; }
-
-/* Slider */
-#compare-slider {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  width: 4px;
-  background: red;
-  cursor: ew-resize;
-  left: 50%;
-  z-index: 10002;
-}
-
-/* Zurück Button */
-#back-btn {
-  position: absolute;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: black;
-  color: white;
-  padding: 12px 20px;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  z-index: 10003;
-}
-
-#back-btn:hover {
-  background: #333;
 }
 </style>
 </head>
@@ -173,75 +178,64 @@ body {
   <button id="compare-start" onclick="openCompareMode()">Vergleichen</button>
 </div>
 
-<!-- Hauptmodell -->
+<!-- Hauptansicht -->
 <div id="main-viewer">
   <model-viewer id="main-model"
     camera-controls
     auto-rotate
     interaction-prompt="none"
-    interaction-prompt-threshold="0"
-    orientation="0 0 0"
-    min-camera-orbit="auto auto auto"
-    max-camera-orbit="auto auto auto"
-  ></model-viewer>
+    interaction-prompt-threshold="0">
+  </model-viewer>
 </div>
 
-<!-- Vergleichsmodus -->
+<!-- Vergleich -->
 <div id="compare-wrapper">
 
+  <!-- Zurück Button -->
   <button id="back-btn" onclick="closeCompareMode()">Zurück</button>
 
-  <!-- Buttonlisten -->
+  <!-- Modellwahl links -->
   <div id="left-buttons" class="compare-list">
-    <button class="compare-btn" onclick="setModelLeft('1150.glb')">1150</button>
-    <button class="compare-btn" onclick="setModelLeft('1175.glb')">1175</button>
-    <button class="compare-btn" onclick="setModelLeft('1374.glb')">1374</button>
-    <button class="compare-btn" onclick="setModelLeft('1550.glb')">1550</button>
-    <button class="compare-btn" onclick="setModelLeft('1630.glb')">1630</button>
-    <button class="compare-btn" onclick="setModelLeft('1936.glb')">1936</button>
+    <button class="compare-btn" onclick="setTop('1150.glb')">1150</button>
+    <button class="compare-btn" onclick="setTop('1175.glb')">1175</button>
+    <button class="compare-btn" onclick="setTop('1374.glb')">1374</button>
+    <button class="compare-btn" onclick="setTop('1550.glb')">1550</button>
+    <button class="compare-btn" onclick="setTop('1630.glb')">1630</button>
+    <button class="compare-btn" onclick="setTop('1936.glb')">1936</button>
   </div>
 
+  <!-- Modellwahl rechts -->
   <div id="right-buttons" class="compare-list">
-    <button class="compare-btn" onclick="setModelRight('1150.glb')">1150</button>
-    <button class="compare-btn" onclick="setModelRight('1175.glb')">1175</button>
-    <button class="compare-btn" onclick="setModelRight('1374.glb')">1374</button>
-    <button class="compare-btn" onclick="setModelRight('1550.glb')">1550</button>
-    <button class="compare-btn" onclick="setModelRight('1630.glb')">1630</button>
-    <button class="compare-btn" onclick="setModelRight('1936.glb')">1936</button>
+    <button class="compare-btn" onclick="setBottom('1150.glb')">1150</button>
+    <button class="compare-btn" onclick="setBottom('1175.glb')">1175</button>
+    <button class="compare-btn" onclick="setBottom('1374.glb')">1374</button>
+    <button class="compare-btn" onclick="setBottom('1550.glb')">1550</button>
+    <button class="compare-btn" onclick="setBottom('1630.glb')">1630</button>
+    <button class="compare-btn" onclick="setBottom('1936.glb')">1936</button>
   </div>
 
-  <!-- Modelle -->
-  <model-viewer id="compare-left"
+  <!-- Vergleichsmodelle -->
+  <model-viewer id="compare-top"
     camera-controls
-    interaction-prompt="none"
-    interaction-prompt-threshold="0"
     auto-rotate="false"
-    disable-tap
-    touch-action="none"
-    disable-pan
-    orientation="0 0 0"
-    min-camera-orbit="auto auto auto"
-    max-camera-orbit="auto auto auto"
-  ></model-viewer>
+    interaction-prompt="none"
+    interaction-prompt-threshold="0">
+  </model-viewer>
 
-  <model-viewer id="compare-right"
+  <model-viewer id="compare-bottom"
     camera-controls
-    interaction-prompt="none"
-    interaction-prompt-threshold="0"
     auto-rotate="false"
-    disable-tap
-    touch-action="none"
-    disable-pan
-    orientation="0 0 0"
-    min-camera-orbit="auto auto auto"
-    max-camera-orbit="auto auto auto"
-  ></model-viewer>
+    interaction-prompt="none"
+    interaction-prompt-threshold="0">
+  </model-viewer>
 
+  <!-- Slider horizontal (Mitte) -->
   <div id="compare-slider"></div>
+
 </div>
 
 <script>
-/* Hauptmodell anzeigen */
+/* Modell anzeigen */
 function showModel(file) {
   document.getElementById("main-model").src = file;
 }
@@ -256,17 +250,17 @@ function closeCompareMode() {
   document.getElementById("compare-wrapper").style.display = "none";
 }
 
-/* Links Modell setzen */
-function setModelLeft(file) {
-  document.getElementById("compare-left").src = file;
+/* Oben Modell setzen */
+function setTop(file) {
+  document.getElementById("compare-top").src = file;
 }
 
-/* Rechts Modell setzen */
-function setModelRight(file) {
-  document.getElementById("compare-right").src = file;
+/* Unten Modell setzen */
+function setBottom(file) {
+  document.getElementById("compare-bottom").src = file;
 }
 
-/* Slider */
+/* Slider Logik */
 const slider = document.getElementById("compare-slider");
 let dragging = false;
 
@@ -276,13 +270,14 @@ window.onmouseup = () => dragging = false;
 window.onmousemove = (e) => {
   if (!dragging) return;
 
-  const pos = Math.min(window.innerWidth - 50, Math.max(50, e.clientX));
-  slider.style.left = pos + "px";
-  document.getElementById("compare-left").style.width = pos + "px";
-  document.getElementById("compare-right").style.width = (window.innerWidth - pos) + "px";
+  const pos = Math.min(window.innerHeight - 50, Math.max(50, e.clientY)); 
+  slider.style.top = pos + "px";
+
+  document.getElementById("compare-top").style.clipPath = `inset(0 0 ${window.innerHeight - pos}px 0)`;
+  document.getElementById("compare-bottom").style.clipPath = `inset(${pos}px 0 0 0)`;
 };
 
-/* ESC siehe zurück */
+/* ESC */
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") closeCompareMode();
 });
