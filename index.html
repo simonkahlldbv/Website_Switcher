@@ -93,7 +93,7 @@ body {
   border: none;
 }
 
-/* Linke & rechte Auswahl — jetzt mittig */
+/* Linke & rechte Auswahl – vertikal zentriert */
 .compare-side-menu {
   position: absolute;
   top: 50%;
@@ -123,7 +123,7 @@ body {
   background: #666;
 }
 
-/* Modelle */
+/* Modelle im Vergleich */
 #compare-left,
 #compare-right {
   position: absolute;
@@ -133,6 +133,7 @@ body {
   object-fit: contain;
 }
 
+/* Rechte Modellhälfte maskieren */
 #compare-right {
   clip-path: inset(0 0 0 50vw);
 }
@@ -168,10 +169,10 @@ body {
 
 <!-- Hauptmodell -->
 <div id="main-viewer">
-  <model-viewer id="main-model" camera-controls auto-rotate></model-viewer>
+  <model-viewer id="main-model" camera-controls auto-rotate interaction-prompt="none"></model-viewer>
 </div>
 
-<!-- Vergleich -->
+<!-- Vergleichsmodus -->
 <div id="compare-wrapper">
 
   <button id="back-btn" onclick="exitCompareMode()">← Zurück</button>
@@ -196,8 +197,9 @@ body {
     <button class="compare-btn" onclick="setModelRight('1936.glb')">1936</button>
   </div>
 
-  <model-viewer id="compare-left" camera-controls></model-viewer>
-  <model-viewer id="compare-right" camera-controls></model-viewer>
+  <!-- Vergleichsmodelle -->
+  <model-viewer id="compare-left" camera-controls interaction-prompt="none"></model-viewer>
+  <model-viewer id="compare-right" camera-controls interaction-prompt="none"></model-viewer>
 
   <div id="compare-slider"></div>
 </div>
@@ -216,6 +218,7 @@ function enterCompareMode() {
   document.getElementById("compare-left").removeAttribute("auto-rotate");
   document.getElementById("compare-right").removeAttribute("auto-rotate");
 
+  // Hauptmodell übernehmen
   const current = document.getElementById("main-model").src;
   document.getElementById("compare-left").src = current;
   document.getElementById("compare-right").src = current;
@@ -225,19 +228,17 @@ function enterCompareMode() {
 function exitCompareMode() {
   document.getElementById("compare-wrapper").style.display = "none";
 
-  // Autorotate wieder an für Hauptmodell
+  // Autorotate wieder aktivieren
   document.getElementById("main-model").setAttribute("auto-rotate", "");
 }
 
 /* Modelle im Vergleich setzen */
 function setModelLeft(file) {
-  const m = document.getElementById("compare-left");
-  m.src = file;
+  document.getElementById("compare-left").src = file;
 }
 
 function setModelRight(file) {
-  const m = document.getElementById("compare-right");
-  m.src = file;
+  document.getElementById("compare-right").src = file;
 }
 
 /* Slider Logik */
@@ -257,6 +258,7 @@ window.onmousemove = (e) => {
   rightModel.style.clipPath = `inset(0 0 0 ${pos}px)`;
 };
 
+/* ESC schließt Vergleich */
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") exitCompareMode();
 });
