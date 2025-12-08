@@ -39,7 +39,6 @@ body {
   background: #555;
 }
 
-/* Vergleich starten */
 #compare-start {
   margin-top: auto;
   padding: 14px;
@@ -70,7 +69,6 @@ body {
 }
 
 /* ---------------- Vergleichsmodus --------------- */
-
 #compare-wrapper {
   position: fixed;
   inset: 0;
@@ -95,10 +93,11 @@ body {
   border: none;
 }
 
-/* Linke & rechte Jahresauswahl */
+/* Linke & rechte Auswahl — jetzt mittig */
 .compare-side-menu {
   position: absolute;
-  top: 60px;
+  top: 50%;
+  transform: translateY(-50%);
   width: 150px;
   background: rgba(0,0,0,0.5);
   padding: 10px;
@@ -172,7 +171,7 @@ body {
   <model-viewer id="main-model" camera-controls auto-rotate></model-viewer>
 </div>
 
-<!-- Vergleichsmodus -->
+<!-- Vergleich -->
 <div id="compare-wrapper">
 
   <button id="back-btn" onclick="exitCompareMode()">← Zurück</button>
@@ -204,7 +203,7 @@ body {
 </div>
 
 <script>
-/* Hauptmodell anzeigen */
+/* Hauptmodell laden */
 function showModel(file) {
   document.getElementById("main-model").src = file;
 }
@@ -213,7 +212,10 @@ function showModel(file) {
 function enterCompareMode() {
   document.getElementById("compare-wrapper").style.display = "block";
 
-  // beide Seiten auf das aktuell ausgewählte Modell setzen
+  // Autorotate ausschalten
+  document.getElementById("compare-left").removeAttribute("auto-rotate");
+  document.getElementById("compare-right").removeAttribute("auto-rotate");
+
   const current = document.getElementById("main-model").src;
   document.getElementById("compare-left").src = current;
   document.getElementById("compare-right").src = current;
@@ -222,15 +224,20 @@ function enterCompareMode() {
 /* Vergleich verlassen */
 function exitCompareMode() {
   document.getElementById("compare-wrapper").style.display = "none";
+
+  // Autorotate wieder an für Hauptmodell
+  document.getElementById("main-model").setAttribute("auto-rotate", "");
 }
 
 /* Modelle im Vergleich setzen */
 function setModelLeft(file) {
-  document.getElementById("compare-left").src = file;
+  const m = document.getElementById("compare-left");
+  m.src = file;
 }
 
 function setModelRight(file) {
-  document.getElementById("compare-right").src = file;
+  const m = document.getElementById("compare-right");
+  m.src = file;
 }
 
 /* Slider Logik */
@@ -246,12 +253,10 @@ window.onmousemove = (e) => {
   if (!dragging) return;
 
   let pos = Math.min(window.innerWidth, Math.max(0, e.clientX));
-
   slider.style.left = pos + "px";
   rightModel.style.clipPath = `inset(0 0 0 ${pos}px)`;
 };
 
-/* ESC beendet Vergleich */
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") exitCompareMode();
 });
