@@ -2,291 +2,232 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>3D Modellvergleich</title>
+<title>Modellvergleich</title>
 <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
 <style>
-body {
-  margin: 0;
-  display: flex;
-  height: 100vh;
-  font-family: Arial, sans-serif;
-}
+    body {
+        margin: 0;
+        overflow: hidden;
+        background: #fff;
+        font-family: Arial;
+    }
 
-/* Sidebar */
-#sidebar {
-  width: 220px;
-  background: #1e1e1e;
-  color: white;
-  display: flex;
-  flex-direction: column;
-  padding: 20px;
-}
+    /* Seitenlayout */
+    #sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 160px;
+        background: #f2f2f2;
+        padding: 20px;
+        overflow-y: auto;
+        z-index: 10;
+    }
 
-.year-btn {
-  background: #333;
-  color: white;
-  padding: 12px;
-  border: none;
-  margin-bottom: 10px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 16px;
-}
+    #main-view {
+        position: fixed;
+        left: 160px;
+        right: 0;
+        top: 0;
+        bottom: 0;
+        background: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
 
-.year-btn:hover {
-  background: #555;
-}
+    #year-buttons button {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        font-size: 16px;
+        cursor: pointer;
+    }
 
-/* Vergleichsbutton unten */
-#compare-start {
-  margin-top: auto;
-  padding: 14px;
-  font-size: 16px;
-  background: #0066ff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
+    #compare-trigger {
+        margin-top: 30px;
+        width: 100%;
+        padding: 10px;
+        background: #d33;
+        color: white;
+        border: none;
+        cursor: pointer;
+        font-size: 16px;
+    }
 
-#compare-start:hover {
-  background: #0050cc;
-}
+    /* Vergleichsmodus */
+    #compare-mode {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: white;
+        z-index: 999;
+    }
 
-/* Hauptbereich */
-#main-viewer {
-  flex: 1;
-  background: #f2f2f2;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+    #back-button {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        padding: 10px 20px;
+        background: black;
+        color: white;
+        border: none;
+        font-size: 16px;
+        cursor: pointer;
+        z-index: 1000;
+    }
 
-#main-viewer model-viewer {
-  width: 80%;
-  height: 80%;
-}
+    /* Modell-Container */
+    #compare-container {
+        position: absolute;
+        inset: 0;
+        overflow: hidden;
+    }
 
-/* Vergleichsmodus */
-#compare-wrapper {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  display: none;
-  z-index: 9999;
-  background: white;
-}
+    #modelA, #modelB {
+        position: absolute;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
 
-/* Modelle links & rechts */
-.compare-side {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 180px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 20000; /* <---- WICHTIG DAMIT MAN SIE KLICKEN KANN */
-}
+    #modelA { clip-path: inset(0 50% 0 0); }
+    #modelB { clip-path: inset(0 0 0 50%); }
 
-#left-model-list { left: 20px; }
-#right-model-list { right: 20px; }
+    /* Slider */
+    #slider {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: red;
+        left: 50%;
+        cursor: ew-resize;
+        z-index: 1000;
+    }
 
-.compare-btn {
-  padding: 10px;
-  background: #222;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-.compare-btn:hover {
-  background: #444;
-}
-
-/* Modelle selbst */
-#compare-left,
-#compare-right {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  width: 50%;
-  overflow: hidden;
-  z-index: 1000; /* niedriger als die Buttonlisten */
-}
-
-#compare-left { left: 0; }
-#compare-right { right: 0; }
-
-/* Slider */
-#compare-slider {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  width: 4px;
-  background: red;
-  cursor: ew-resize;
-  left: 50%;
-  z-index: 15000;
-}
-
-/* Zurück Button */
-#back-btn {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  z-index: 25000;
-  padding: 10px 15px;
-  background: black;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
-
-#back-btn:hover {
-  background: #333;
-}
+    /* Sync-Hover (kein Cursor-Symbol von model-viewer!) */
+    model-viewer::part(default-controls) {
+        display: none !important;
+    }
 </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
+<!-- Seitenleiste -->
 <div id="sidebar">
-  <h3>Modelle</h3>
-
-  <button class="year-btn" onclick="showModel('1150.glb')">1150</button>
-  <button class="year-btn" onclick="showModel('1175.glb')">1175</button>
-  <button class="year-btn" onclick="showModel('1374.glb')">1374</button>
-  <button class="year-btn" onclick="showModel('1550.glb')">1550</button>
-  <button class="year-btn" onclick="showModel('1630.glb')">1630</button>
-  <button class="year-btn" onclick="showModel('1936.glb')">1936</button>
-
-  <button id="compare-start" onclick="startComparison()">Vergleichen</button>
+    <div id="year-buttons"></div>
+    <button id="compare-trigger">Vergleichen</button>
 </div>
 
-<!-- HAUPTVIEWER -->
-<div id="main-viewer">
-  <model-viewer id="main-model" camera-controls></model-viewer>
+<!-- Hauptmodellanzeige -->
+<div id="main-view">
+    <model-viewer id="main-model" camera-controls touch-action="none" disable-zoom></model-viewer>
 </div>
 
-<!-- VERGLEICHSMODUS -->
-<div id="compare-wrapper">
+<!-- Vergleichsmodus -->
+<div id="compare-mode">
+    <button id="back-button">← Zurück</button>
 
-  <button id="back-btn" onclick="exitComparison()">← Zurück</button>
+    <div id="compare-container">
+        <model-viewer id="modelA" camera-controls touch-action="none" disable-zoom></model-viewer>
+        <model-viewer id="modelB" camera-controls touch-action="none" disable-zoom></model-viewer>
+    </div>
 
-  <!-- Listen links und rechts -->
-  <div id="left-model-list" class="compare-side"></div>
-  <div id="right-model-list" class="compare-side"></div>
-
-  <!-- Modelle -->
-  <model-viewer id="compare-left" camera-controls></model-viewer>
-  <model-viewer id="compare-right" camera-controls></model-viewer>
-
-  <!-- Slider -->
-  <div id="compare-slider"></div>
+    <div id="slider"></div>
 </div>
 
 <script>
-/* ---- Beim Laden sofort erstes Modell anzeigen ---- */
-document.getElementById("main-model").src = "1150.glb";
-
-/* ---- Modell in Hauptansicht laden ---- */
-function showModel(file) {
-  document.getElementById("main-model").src = file;
-}
-
-/* ==========================================================
-   VERGLEICHSMODUS STARTEN
-========================================================== */
-function startComparison() {
-
-  document.getElementById("compare-wrapper").style.display = "block";
-
-  const leftList = document.getElementById("left-model-list");
-  const rightList = document.getElementById("right-model-list");
-
-  leftList.innerHTML = "";
-  rightList.innerHTML = "";
-
-  const models = [
-    "1150.glb", "1175.glb", "1374.glb",
-    "1550.glb", "1630.glb", "1936.glb"
-  ];
-
-  models.forEach(file => {
-    let btnL = document.createElement("button");
-    btnL.className = "compare-btn";
-    btnL.innerText = file.replace(".glb", "");
-    btnL.onclick = () => document.getElementById("compare-left").src = file;
-    leftList.appendChild(btnL);
-
-    let btnR = document.createElement("button");
-    btnR.className = "compare-btn";
-    btnR.innerText = file.replace(".glb", "");
-    btnR.onclick = () => document.getElementById("compare-right").src = file;
-    rightList.appendChild(btnR);
-  });
-}
-
-/* ==========================================================
-   VERGLEICH BEENDEN
-========================================================== */
-function exitComparison() {
-  document.getElementById("compare-wrapper").style.display = "none";
-}
-
-/* ==========================================================
-   SLIDER LOGIK
-========================================================== */
-const slider = document.getElementById("compare-slider");
-let dragging = false;
-
-slider.onmousedown = () => dragging = true;
-window.onmouseup = () => dragging = false;
-
-window.onmousemove = (e) => {
-  if (!dragging) return;
-
-  const pos = Math.min(window.innerWidth - 50, Math.max(50, e.clientX));
-  slider.style.left = pos + "px";
-  document.getElementById("compare-left").style.width = pos + "px";
-  document.getElementById("compare-right").style.width =
-    (window.innerWidth - pos) + "px";
+/* ------------------------------
+   MODELLE DEFINIEREN
+------------------------------ */
+const models = {
+    "2003": "facelift_orange_2003.glb",
+    "2006": "facelift_orange_2006.glb",
+    "2009": "facelift_orange_2009.glb",
+    "2013": "facelift_orange_2013.glb",
+    "2016": "facelift_orange_2016.glb",
+    "2020": "facelift_orange_2020.glb"
 };
 
-/* ==========================================================
-   KAMERA-SYNCHRONISATION
-========================================================== */
+/* ------------------------------
+   JAHRE ALS BUTTONS LADEN
+------------------------------ */
+const yearButtons = document.getElementById("year-buttons");
+const mainModel = document.getElementById("main-model");
 
-const leftModel = document.getElementById("compare-left");
-const rightModel = document.getElementById("compare-right");
-
-let syncing = false;
-
-function syncCamera(source, target) {
-  if (syncing) return;
-  syncing = true;
-
-  target.cameraOrbit = source.cameraOrbit;
-  target.cameraTarget = source.cameraTarget;
-  target.fieldOfView = source.fieldOfView;
-
-  syncing = false;
+for (const year in models) {
+    const btn = document.createElement("button");
+    btn.innerText = year;
+    btn.onclick = () => {
+        mainModel.src = models[year];
+    };
+    yearButtons.appendChild(btn);
 }
 
-leftModel.addEventListener("camera-change", () => {
-  syncCamera(leftModel, rightModel);
+/* Erster Load */
+mainModel.src = models["2003"];
+
+/* ------------------------------
+   VERGLEICHSMODUS
+------------------------------ */
+const compareMode = document.getElementById("compare-mode");
+const backButton = document.getElementById("back-button");
+const slider = document.getElementById("slider");
+
+const modelA = document.getElementById("modelA");
+const modelB = document.getElementById("modelB");
+
+/* Vergleich starten */
+document.getElementById("compare-trigger").onclick = () => {
+    compareMode.style.display = "block";
+
+    modelA.src = models["2003"];
+    modelB.src = models["2020"];
+};
+
+/* Vergleich beenden */
+backButton.onclick = () => {
+    compareMode.style.display = "none";
+};
+
+/* ------------------------------
+   SLIDER LOGIK
+------------------------------ */
+let sliding = false;
+
+slider.addEventListener("mousedown", () => sliding = true);
+window.addEventListener("mouseup", () => sliding = false);
+window.addEventListener("mousemove", e => {
+    if (!sliding) return;
+
+    let x = e.clientX / window.innerWidth;
+
+    x = Math.min(0.95, Math.max(0.05, x));
+
+    slider.style.left = (x * 100) + "%";
+
+    modelA.style.clipPath = `inset(0 ${(1 - x) * 100}% 0 0)`;
+    modelB.style.clipPath = `inset(0 0 0 ${x * 100}%)`;
 });
 
-rightModel.addEventListener("camera-change", () => {
-  syncCamera(rightModel, leftModel);
-});
+/* ------------------------------
+   SYNCHRONISIERTE STEUERUNG
+------------------------------ */
+function sync(a, b) {
+    a.addEventListener("camera-change", () => {
+        b.cameraOrbit = a.cameraOrbit;
+        b.cameraTarget = a.cameraTarget;
+        b.fieldOfView = a.fieldOfView;
+    });
+}
+
+sync(modelA, modelB);
+sync(modelB, modelA);
+
 </script>
-
 </body>
 </html>
