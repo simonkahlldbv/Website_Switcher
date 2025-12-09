@@ -11,9 +11,9 @@ body {
   display: flex;
   height: 100vh;
   font-family: Arial, sans-serif;
-  overflow: hidden;
 }
 
+/* Sidebar */
 #sidebar {
   width: 220px;
   background: #1e1e1e;
@@ -21,7 +21,6 @@ body {
   display: flex;
   flex-direction: column;
   padding: 20px;
-  z-index: 10;
 }
 
 .year-btn {
@@ -32,11 +31,18 @@ body {
   margin-bottom: 10px;
   border-radius: 6px;
   cursor: pointer;
+  font-size: 16px;
 }
 
+.year-btn:hover {
+  background: #555;
+}
+
+/* Vergleichsbutton unten */
 #compare-start {
   margin-top: auto;
   padding: 14px;
+  font-size: 16px;
   background: #0066ff;
   color: white;
   border: none;
@@ -44,6 +50,11 @@ body {
   cursor: pointer;
 }
 
+#compare-start:hover {
+  background: #0050cc;
+}
+
+/* Hauptbereich */
 #main-viewer {
   flex: 1;
   background: #f2f2f2;
@@ -52,83 +63,97 @@ body {
   align-items: center;
 }
 
-#main-model {
+#main-viewer model-viewer {
   width: 80%;
   height: 80%;
 }
 
-/* Vergleichsbereich */
+/* Vergleichsmodus */
 #compare-wrapper {
   position: fixed;
   top: 0;
-  left: 220px;
-  width: calc(100vw - 220px);
+  left: 0;
+  width: 100vw;
   height: 100vh;
-  background: white;
   display: none;
-  overflow: hidden;
-  z-index: 999;
+  z-index: 9999;
+  background: white; /* weißer Hintergrund */
 }
 
-/* Modelle links/rechts */
-#compare-left, #compare-right {
+/* Modelle links & rechts */
+.compare-side {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+#left-model-list { left: 20px; }
+#right-model-list { right: 20px; }
+
+.compare-btn {
+  padding: 10px;
+  background: #222;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.compare-btn:hover {
+  background: #444;
+}
+
+/* Modelle selbst */
+#compare-left,
+#compare-right {
   position: absolute;
   top: 0;
   height: 100%;
-  width: 100%;
+  width: 50%;
+  overflow: hidden;
 }
 
-#compare-left {
-  left: 0;
-  clip-path: inset(0 50% 0 0);
-}
-
-#compare-right {
-  right: 0;
-  clip-path: inset(0 0 0 50%);
-}
+#compare-left { left: 0; }
+#compare-right { right: 0; }
 
 /* Slider */
 #compare-slider {
   position: absolute;
-  width: 4px;
+  top: 0;
   height: 100%;
+  width: 4px;
   background: red;
-  left: 50%;
   cursor: ew-resize;
-  z-index: 10002;
+  left: 50%;
+  z-index: 10000;
 }
 
-/* Buttons links & rechts */
-.compare-list {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  z-index: 10003;
-}
-
-#left-buttons { left: 20px; }
-#right-buttons { right: 20px; }
-
+/* Zurück Button */
 #back-btn {
   position: absolute;
   top: 20px;
   left: 20px;
+  z-index: 20000;
+  padding: 10px 15px;
   background: black;
   color: white;
-  padding: 10px 18px;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
-  z-index: 10004;
+}
+
+#back-btn:hover {
+  background: #333;
 }
 </style>
 </head>
 <body>
 
+<!-- SIDEBAR -->
 <div id="sidebar">
   <h3>Modelle</h3>
 
@@ -139,64 +164,80 @@ body {
   <button class="year-btn" onclick="showModel('1630.glb')">1630</button>
   <button class="year-btn" onclick="showModel('1936.glb')">1936</button>
 
-  <button id="compare-start" onclick="openCompareMode()">Vergleichen</button>
+  <button id="compare-start" onclick="startComparison()">Vergleichen</button>
 </div>
 
+<!-- HAUPTVIEWER -->
 <div id="main-viewer">
-  <model-viewer id="main-model" camera-controls interaction-prompt="none"></model-viewer>
+  <model-viewer id="main-model" camera-controls></model-viewer>
 </div>
 
+<!-- VERGLEICHSMODUS -->
 <div id="compare-wrapper">
 
-  <button id="back-btn" onclick="closeCompareMode()">Zurück</button>
+  <button id="back-btn" onclick="exitComparison()">← Zurück</button>
 
-  <div id="left-buttons" class="compare-list">
-    <button class="compare-btn" onclick="setLeft('1150.glb')">1150</button>
-    <button class="compare-btn" onclick="setLeft('1175.glb')">1175</button>
-    <button class="compare-btn" onclick="setLeft('1374.glb')">1374</button>
-    <button class="compare-btn" onclick="setLeft('1550.glb')">1550</button>
-    <button class="compare-btn" onclick="setLeft('1630.glb')">1630</button>
-    <button class="compare-btn" onclick="setLeft('1936.glb')">1936</button>
-  </div>
+  <!-- Listen links und rechts -->
+  <div id="left-model-list" class="compare-side"></div>
+  <div id="right-model-list" class="compare-side"></div>
 
-  <div id="right-buttons" class="compare-list">
-    <button class="compare-btn" onclick="setRight('1150.glb')">1150</button>
-    <button class="compare-btn" onclick="setRight('1175.glb')">1175</button>
-    <button class="compare-btn" onclick="setRight('1374.glb')">1374</button>
-    <button class="compare-btn" onclick="setRight('1550.glb')">1550</button>
-    <button class="compare-btn" onclick="setRight('1630.glb')">1630</button>
-    <button class="compare-btn" onclick="setRight('1936.glb')">1936</button>
-  </div>
+  <!-- Modelle -->
+  <model-viewer id="compare-left" camera-controls></model-viewer>
+  <model-viewer id="compare-right" camera-controls></model-viewer>
 
-  <model-viewer id="compare-left" camera-controls interaction-prompt="none"></model-viewer>
-  <model-viewer id="compare-right" camera-controls interaction-prompt="none"></model-viewer>
-
+  <!-- Slider -->
   <div id="compare-slider"></div>
 </div>
 
 <script>
+/* ---- Modell in Hauptansicht laden ---- */
 function showModel(file) {
   document.getElementById("main-model").src = file;
 }
 
-function openCompareMode() {
+/* ==========================================================
+   VERGLEICHSMODUS STARTEN
+========================================================== */
+function startComparison() {
+
   document.getElementById("compare-wrapper").style.display = "block";
+
+  const leftList = document.getElementById("left-model-list");
+  const rightList = document.getElementById("right-model-list");
+
+  leftList.innerHTML = "";
+  rightList.innerHTML = "";
+
+  const models = [
+    "1150.glb", "1175.glb", "1374.glb",
+    "1550.glb", "1630.glb", "1936.glb"
+  ];
+
+  models.forEach(file => {
+    let btnL = document.createElement("button");
+    btnL.className = "compare-btn";
+    btnL.innerText = file.replace(".glb", "");
+    btnL.onclick = () => document.getElementById("compare-left").src = file;
+    leftList.appendChild(btnL);
+
+    let btnR = document.createElement("button");
+    btnR.className = "compare-btn";
+    btnR.innerText = file.replace(".glb", "");
+    btnR.onclick = () => document.getElementById("compare-right").src = file;
+    rightList.appendChild(btnR);
+  });
 }
 
-function closeCompareMode() {
+/* ==========================================================
+   VERGLEICH BEENDEN
+========================================================== */
+function exitComparison() {
   document.getElementById("compare-wrapper").style.display = "none";
 }
 
-function setLeft(file) {
-  document.getElementById("compare-left").src = file;
-}
-
-function setRight(file) {
-  document.getElementById("compare-right").src = file;
-}
-
-/* ----------- SLIDER FIX ------------- */
-
+/* ==========================================================
+   SLIDER LOGIK
+========================================================== */
 const slider = document.getElementById("compare-slider");
 let dragging = false;
 
@@ -206,16 +247,40 @@ window.onmouseup = () => dragging = false;
 window.onmousemove = (e) => {
   if (!dragging) return;
 
-  const wrapper = document.getElementById("compare-wrapper");
-  const rect = wrapper.getBoundingClientRect();
-  const width = rect.width;
-
-  const x = Math.min(width - 50, Math.max(50, e.clientX - rect.left));
-  slider.style.left = x + "px";
-
-  document.getElementById("compare-left").style.clipPath = `inset(0 ${width - x}px 0 0)`;
-  document.getElementById("compare-right").style.clipPath = `inset(0 0 0 ${x}px)`;
+  const pos = Math.min(window.innerWidth - 50, Math.max(50, e.clientX));
+  slider.style.left = pos + "px";
+  document.getElementById("compare-left").style.width = pos + "px";
+  document.getElementById("compare-right").style.width =
+    (window.innerWidth - pos) + "px";
 };
+
+/* ==========================================================
+   KAMERA-SYNCHRONISATION (NEUE FUNKTION)
+========================================================== */
+
+const leftModel = document.getElementById("compare-left");
+const rightModel = document.getElementById("compare-right");
+
+let syncing = false;
+
+function syncCamera(source, target) {
+  if (syncing) return;
+  syncing = true;
+
+  target.cameraOrbit = source.cameraOrbit;
+  target.cameraTarget = source.cameraTarget;
+  target.fieldOfView = source.fieldOfView;
+
+  syncing = false;
+}
+
+leftModel.addEventListener("camera-change", () => {
+  syncCamera(leftModel, rightModel);
+});
+
+rightModel.addEventListener("camera-change", () => {
+  syncCamera(rightModel, leftModel);
+});
 </script>
 
 </body>
