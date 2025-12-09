@@ -77,7 +77,7 @@ body {
   height: 100vh;
   display: none;
   z-index: 9999;
-  background: white; /* weißer Hintergrund */
+  background: white;
 }
 
 /* Modelle links & rechts */
@@ -89,6 +89,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  z-index: 20000; /* <---- WICHTIG DAMIT MAN SIE KLICKEN KANN */
 }
 
 #left-model-list { left: 20px; }
@@ -115,6 +116,7 @@ body {
   height: 100%;
   width: 50%;
   overflow: hidden;
+  z-index: 1000; /* niedriger als die Buttonlisten */
 }
 
 #compare-left { left: 0; }
@@ -129,7 +131,7 @@ body {
   background: red;
   cursor: ew-resize;
   left: 50%;
-  z-index: 10000;
+  z-index: 15000;
 }
 
 /* Zurück Button */
@@ -137,7 +139,7 @@ body {
   position: absolute;
   top: 20px;
   left: 20px;
-  z-index: 20000;
+  z-index: 25000;
   padding: 10px 15px;
   background: black;
   color: white;
@@ -190,6 +192,9 @@ body {
 </div>
 
 <script>
+/* ---- Beim Laden sofort erstes Modell anzeigen ---- */
+document.getElementById("main-model").src = "1150.glb";
+
 /* ---- Modell in Hauptansicht laden ---- */
 function showModel(file) {
   document.getElementById("main-model").src = file;
@@ -255,7 +260,7 @@ window.onmousemove = (e) => {
 };
 
 /* ==========================================================
-   KAMERA-SYNCHRONISATION (NEUE FUNKTION)
+   KAMERA-SYNCHRONISATION
 ========================================================== */
 
 const leftModel = document.getElementById("compare-left");
