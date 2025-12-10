@@ -4,7 +4,6 @@
 <meta charset="utf-8" />
 <title>3D Modellvergleich</title>
 
-<!-- model-viewer -->
 <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
 <style>
@@ -17,7 +16,7 @@
     height:100%;
     margin:0;
     font-family: Arial, sans-serif;
-    background: #f6f6f6;
+    background:#f6f6f6;
   }
 
   /* SIDEBAR */
@@ -28,14 +27,12 @@
     bottom:0;
     width:var(--sidebar-width);
     padding:20px;
-    box-sizing:border-box;
     background:#1e1e1e;
     color:white;
     overflow:auto;
     z-index:50;
   }
 
-  #sidebar h2 { margin:0 0 12px 0; font-size:18px; }
   .year-btn{
     display:block;
     width:100%;
@@ -47,71 +44,63 @@
     border-radius:6px;
     cursor:pointer;
     text-align:left;
-    font-size:15px;
   }
-  .year-btn:hover{ background:#444; }
 
-  #compare-btn {
-    margin-top:18px;
-    display:block;
+  #compare-btn{
+    margin-top:20px;
     width:100%;
     padding:12px;
     background:var(--accent);
     color:white;
     border:0;
-    border-radius:8px;
+    border-radius:6px;
     cursor:pointer;
     font-weight:600;
-    font-size:15px;
   }
-  #compare-btn:hover{ filter:brightness(.95); }
 
-  /* MAIN VIEW */
+  /* MAIN AREA */
   #main-area{
     position:fixed;
     left:var(--sidebar-width);
-    top:0;
     right:0;
+    top:0;
     bottom:0;
     display:flex;
-    align-items:center;
     justify-content:center;
+    align-items:center;
     background:#eaeaea;
   }
-
-  model-viewer#main-model{
+  #main-model{
     width:80%;
     height:80%;
-    --poster-color: transparent;
   }
 
-  /* COMPARE MODE (OVERLAY) */
+  /* COMPARE MODE */
   #compare-wrapper{
     display:none;
     position:fixed;
     left:var(--sidebar-width);
     top:0;
-    width:calc(100vw - var(--sidebar-width));
-    height:100vh;
+    width:calc(100% - var(--sidebar-width));
+    height:100%;
     background:white;
     z-index:1000;
-    overflow:hidden;
   }
 
-  #compare-back {
+  #compare-back{
     position:absolute;
-    top:16px;
-    left:16px;
-    z-index:2000;
+    top:15px;
+    left:15px;
     padding:10px 14px;
-    background:#000;
-    color:#fff;
+    background:black;
+    color:white;
     border:0;
     border-radius:6px;
     cursor:pointer;
+    z-index:2000;
   }
 
-  .side-list {
+  .side-list{
     position:absolute;
     top:50%;
     transform:translateY(-50%);
@@ -119,29 +108,18 @@
     flex-direction:column;
     gap:10px;
     z-index:2000;
-    width:160px;
   }
-  #left-list { left:20px; }
-  #right-list { right:20px; text-align:right; }
 
-  .side-list button {
-    padding:8px 10px;
-    background:#222;
-    color:#fff;
-    border:0;
-    border-radius:6px;
-    cursor:pointer;
-  }
-  .side-list button:hover{ background:#444; }
+  #left-list{ left:20px; }
+  #right-list{ right:20px; }
 
-  /* OVERLAYED MODELS */
   #compare-container{
     position:absolute;
     inset:0;
     overflow:hidden;
   }
 
-  model-viewer.compare-model {
+  model-viewer.compare-model{
     position:absolute;
     inset:0;
     width:100%;
@@ -150,76 +128,50 @@
     --poster-color: transparent;
   }
 
-  #model-right {
-    opacity:1; /* wird durch slider verändert */
-    transition: opacity 0.15s linear;
-  }
-
-  /* opacity slider */
-  #opacity-slider {
+  /* Slider */
+  #compare-slider{
     position:absolute;
-    bottom:30px;
-    left:50%;
-    transform:translateX(-50%);
-    width:40%;
-    height:4px;
-    z-index:2000;
-  }
-
-  model-viewer::part(default-controls){
-    display:none !important;
+    top:0;
+    height:100%;
+    width:6px;
+    background:#ff4444;
+    border-radius:3px;
+    cursor:ew-resize;
+    z-index:3000;
   }
 </style>
 </head>
 <body>
 
-  <!-- Sidebar -->
-  <div id="sidebar">
-    <h2>Modelle</h2>
-    <div id="year-list"></div>
+<!-- Sidebar -->
+<div id="sidebar">
+  <h2>Modelle</h2>
+  <div id="year-list"></div>
+  <button id="compare-btn">Vergleichen</button>
+</div>
 
-    <button id="compare-btn">Vergleichen</button>
+<!-- Main -->
+<div id="main-area">
+  <model-viewer id="main-model" camera-controls interaction-prompt="none" interaction-prompt-threshold="0"></model-viewer>
+</div>
+
+<!-- Compare Overlay -->
+<div id="compare-wrapper">
+  <button id="compare-back">← Zurück</button>
+
+  <div id="left-list" class="side-list"></div>
+  <div id="right-list" class="side-list"></div>
+
+  <div id="compare-container">
+    <model-viewer id="model-left" class="compare-model" camera-controls interaction-prompt="none"></model-viewer>
+    <model-viewer id="model-right" class="compare-model" camera-controls interaction-prompt="none"></model-viewer>
   </div>
 
-  <!-- Main area -->
-  <div id="main-area">
-    <model-viewer id="main-model"
-      camera-controls
-      interaction-prompt="none"
-      interaction-prompt-threshold="0"
-      alt="Hauptmodell">
-    </model-viewer>
-  </div>
-
-  <!-- Compare overlay -->
-  <div id="compare-wrapper">
-    <button id="compare-back">← Zurück</button>
-
-    <div id="left-list" class="side-list"></div>
-    <div id="right-list" class="side-list"></div>
-
-    <div id="compare-container">
-      <model-viewer id="model-left" class="compare-model"
-        camera-controls
-        interaction-prompt="none"
-        interaction-prompt-threshold="0">
-      </model-viewer>
-
-      <model-viewer id="model-right" class="compare-model"
-        camera-controls
-        interaction-prompt="none"
-        interaction-prompt-threshold="0">
-      </model-viewer>
-    </div>
-
-    <!-- Opacity Slider -->
-    <input id="opacity-slider" type="range" min="0" max="1" step="0.01" value="0.5">
-  </div>
+  <div id="compare-slider"></div>
+</div>
 
 <script>
-/* ===========================
-   Models
-   =========================== */
+/* MODELS */
 const MODEL_LIST = [
   "1150.glb",
   "1175.glb",
@@ -229,22 +181,19 @@ const MODEL_LIST = [
   "1936.glb"
 ];
 
-/* Populate sidebar */
+/* populate list */
 const mainViewer = document.getElementById("main-model");
-const yearList = document.getElementById('year-list');
-
-MODEL_LIST.forEach(fn => {
-  const name = fn.replace(/\.glb$/,'');
-  const btn = document.createElement("button");
-  btn.className = "year-btn";
-  btn.textContent = name;
-  btn.onclick = () => { mainViewer.src = fn; };
-  yearList.appendChild(btn);
+const yearList = document.getElementById("year-list");
+MODEL_LIST.forEach(fn=>{
+  let b=document.createElement("button");
+  b.className="year-btn";
+  b.textContent=fn.replace(".glb","");
+  b.onclick=()=> mainViewer.src=fn;
+  yearList.appendChild(b);
 });
-
 mainViewer.src = MODEL_LIST[0];
 
-/* compare mode */
+/* compare UI */
 const compareWrapper = document.getElementById("compare-wrapper");
 const compareBtn = document.getElementById("compare-btn");
 const compareBack = document.getElementById("compare-back");
@@ -252,63 +201,78 @@ const leftList = document.getElementById("left-list");
 const rightList = document.getElementById("right-list");
 const modelLeft = document.getElementById("model-left");
 const modelRight = document.getElementById("model-right");
-const opacitySlider = document.getElementById("opacity-slider");
+const slider = document.getElementById("compare-slider");
+const container = document.getElementById("compare-container");
 
+/* list builder */
 function buildLists(){
-  leftList.innerHTML = "";
-  rightList.innerHTML = "";
+  leftList.innerHTML="";
+  rightList.innerHTML="";
+  MODEL_LIST.forEach(fn=>{
+    let name=fn.replace(".glb","");
+    let L=document.createElement("button");
+    L.textContent=name;
+    L.onclick=()=>{ modelLeft.src=fn; };
+    leftList.appendChild(L);
 
-  MODEL_LIST.forEach(fn => {
-    const name = fn.replace(/\.glb$/,'');
-
-    const bl = document.createElement("button");
-    bl.textContent = name;
-    bl.onclick = () => { modelLeft.src = fn; };
-    leftList.appendChild(bl);
-
-    const br = document.createElement("button");
-    br.textContent = name;
-    br.onclick = () => { modelRight.src = fn; };
-    rightList.appendChild(br);
+    let R=document.createElement("button");
+    R.textContent=name;
+    R.onclick=()=>{ modelRight.src=fn; };
+    rightList.appendChild(R);
   });
 }
 
-compareBtn.onclick = () => {
+/* open compare */
+compareBtn.onclick = ()=>{
   buildLists();
-  compareWrapper.style.display = "block";
-
+  compareWrapper.style.display="block";
   modelLeft.src = MODEL_LIST[0];
   modelRight.src = MODEL_LIST[MODEL_LIST.length-1];
+
+  requestAnimationFrame(()=> positionSlider(0.5));
 };
 
-compareBack.onclick = () => {
-  compareWrapper.style.display = "none";
+/* close compare */
+compareBack.onclick = ()=> compareWrapper.style.display="none";
+
+/* --- Vertical SLIDER with clip-path --- */
+function positionSlider(percent){
+  const rect = container.getBoundingClientRect();
+  const x = percent * rect.width;
+  slider.style.left = x + "px";
+
+  modelLeft.style.clipPath = `inset(0 ${rect.width - x}px 0 0)`;
+  modelRight.style.clipPath = `inset(0 0 0 ${x}px)`;
+}
+
+let dragging=false;
+slider.onmousedown = ()=> dragging=true;
+window.onmouseup = ()=> dragging=false;
+
+window.onmousemove = (e)=>{
+  if(!dragging) return;
+  const rect = container.getBoundingClientRect();
+  let x = e.clientX - rect.left;
+  x = Math.max(20, Math.min(rect.width-20, x));  
+  positionSlider(x / rect.width);
 };
 
-/* opacity blend */
-opacitySlider.oninput = () => {
-  modelRight.style.opacity = opacitySlider.value;
-};
+/* ---- CAMERA SYNC (correct & stable) ---- */
+let syncing=false;
 
-/* ---- CAMERA SYNC ---- */
-let syncing = false;
-
-function sync(source, target){
+function syncCam(source, target){
   if(syncing) return;
-  syncing = true;
-
-  try {
+  syncing=true;
+  try{
     target.cameraOrbit = source.cameraOrbit;
     target.cameraTarget = source.cameraTarget;
     target.fieldOfView = source.fieldOfView;
-  } catch(e){}
-
+  }catch(e){}
   setTimeout(()=> syncing=false,0);
 }
 
-modelLeft.addEventListener("camera-change",()=>sync(modelLeft,modelRight));
-modelRight.addEventListener("camera-change",()=>sync(modelRight,modelLeft));
-
+modelLeft.addEventListener("camera-change", ()=> syncCam(modelLeft, modelRight));
+modelRight.addEventListener("camera-change", ()=> syncCam(modelRight, modelLeft));
 </script>
 </body>
 </html>
