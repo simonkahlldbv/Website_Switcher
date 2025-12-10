@@ -1,244 +1,411 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<title>3D Vergleich</title>
+<meta charset="utf-8" />
+<title>3D Modellvergleich</title>
+
+<!-- model-viewer -->
+<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+
 <style>
-    body {
-        margin: 0;
-        overflow: hidden;
-        background: white;
-        font-family: Arial, sans-serif;
-    }
+  :root {
+    --sidebar-width: 220px;
+    --accent: #0077ff;
+  }
 
-    #zurueckBtn {
-        position: fixed;
-        top: 20px;
-        left: 20px;
-        z-index: 30;
-        padding: 10px 20px;
-        background: #222;
-        color: white;
-        border-radius: 8px;
-        cursor: pointer;
-    }
+  html, body {
+    height: 100%;
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #f6f6f6;
+  }
 
-    /* Die beiden Model-Container liegen exakt übereinander! */
-    #viewerContainer {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        overflow: hidden;
-    }
+  /* SIDEBAR */
+  #sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: var(--sidebar-width);
+    padding: 20px;
+    box-sizing: border-box;
+    background: #1e1e1e;
+    color: white;
+    overflow-y: auto;
+    z-index: 60;
+  }
 
-    canvas {
-        position: absolute;
-        top: 0;
-        left: 0;
-    }
+  #sidebar h2 { margin: 0 0 12px 0; font-size: 18px; }
+  .year-btn {
+    display: block;
+    width: 100%;
+    padding: 10px;
+    margin: 8px 0;
+    background: #333;
+    color: white;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: left;
+    font-size: 15px;
+  }
+  .year-btn:hover { background: #444; }
 
-    #modelA {
-        z-index: 5;
-    }
+  #compare-btn {
+    margin-top: 18px;
+    display: block;
+    width: 100%;
+    padding: 12px;
+    background: var(--accent);
+    color: white;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 15px;
+  }
+  #compare-btn:hover { filter: brightness(.95); }
 
-    #modelB {
-        z-index: 6;
-        /* Anfangs wird Modell B rechts angezeigt */
-        clip-path: inset(0 0 0 50%);
-    }
+  /* MAIN VIEW */
+  #main-area {
+    position: fixed;
+    left: var(--sidebar-width);
+    top: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #eaeaea;
+    z-index: 10;
+  }
 
-    /* Slider */
-    #slider {
-        position: absolute;
-        top: 0;
-        left: 50%;
-        width: 4px;
-        height: 100%;
-        background: red;
-        z-index: 20;
-        cursor: ew-resize;
-    }
+  model-viewer#main-model {
+    width: 80%;
+    height: 80%;
+    --poster-color: transparent;
+  }
 
-    /* Jahr-Buttons links und rechts */
-    .yearList {
-        position: fixed;
-        top: 20%;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        z-index: 40;
-    }
+  /* COMPARE OVERLAY */
+  #compare-overlay {
+    display: none;
+    position: fixed;
+    left: var(--sidebar-width);
+    top: 0;
+    width: calc(100vw - var(--sidebar-width));
+    height: 100vh;
+    background: #fff;
+    z-index: 200;
+    overflow: hidden;
+  }
 
-    #leftYears { left: 20px; }
-    #rightYears { right: 20px; }
+  #compare-back {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 300;
+    padding: 10px 14px;
+    background: #000;
+    color: #fff;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+  }
 
-    .yearBtn {
-        background: #222;
-        color: white;
-        padding: 8px 12px;
-        border-radius: 6px;
-        cursor: pointer;
-        text-align: center;
-        width: 60px;
-    }
+  /* left/right lists inside compare (centered vertically) */
+  .side-list {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 300; /* above the model-viewers */
+    width: 140px;
+  }
+  #left-list { left: 20px; }
+  #right-list { right: 20px; text-align: right; }
+
+  .side-list button {
+    padding: 8px 10px;
+    background: #222;
+    color: #fff;
+    border: 0;
+    border-radius: 6px;
+    cursor: pointer;
+    text-align: center;
+  }
+  .side-list button:hover { background: #444; }
+
+  /* compare container (both model-viewers exactly overlapping) */
+  #compare-container {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    overflow: hidden;
+  }
+
+  model-viewer.compare {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    --poster-color: transparent;
+    /* allow interaction */
+    pointer-events: auto;
+    touch-action: none;
+  }
+
+  /* top viewer (left half visible by clip-path), bottom viewer (right half visible) */
+  #viewer-left { z-index: 100; clip-path: inset(0 calc(50%) 0 0); }
+  #viewer-right { z-index: 110; clip-path: inset(0 0 0 calc(50%)); }
+
+  /* vertical slider line - placed inside compare-container for easy coords */
+  #slider {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    width: 4px;
+    background: #ff3b3b;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 250;
+    cursor: ew-resize;
+    border-radius: 2px;
+  }
+
+  /* hide model-viewer default interaction prompts/controls */
+  model-viewer::part(default-controls) {
+    display: none !important;
+  }
 </style>
 </head>
 <body>
 
-<div id="zurueckBtn">← Zurück</div>
+  <!-- Sidebar -->
+  <div id="sidebar">
+    <h2>Modelle</h2>
+    <div id="year-list"></div>
 
-<!-- Jahr-Listen -->
-<div id="leftYears" class="yearList"></div>
-<div id="rightYears" class="yearList"></div>
+    <button id="compare-btn">Vergleichen</button>
+  </div>
 
-<!-- 3D Bereich -->
-<div id="viewerContainer">
-    <canvas id="modelA"></canvas>
-    <canvas id="modelB"></canvas>
-</div>
+  <!-- Main area -->
+  <div id="main-area">
+    <model-viewer id="main-model"
+      camera-controls
+      interaction-prompt="none"
+      interaction-prompt-threshold="0"
+      alt="Hauptmodell">
+    </model-viewer>
+  </div>
 
-<!-- Slider -->
-<div id="slider"></div>
+  <!-- Compare overlay -->
+  <div id="compare-overlay" aria-hidden="true">
+    <button id="compare-back">← Zurück</button>
 
-<script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153/build/three.module.js';
-import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.153/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.153/examples/jsm/loaders/GLTFLoader.js';
+    <div id="left-list" class="side-list"></div>
+    <div id="right-list" class="side-list"></div>
 
-/* -------------------------------
-   MODEL-NAMEN
-----------------------------------*/
-const years = ["1150","1175","1374","1550","1630","1936"];
+    <div id="compare-container">
+      <!-- left/top model -->
+      <model-viewer id="viewer-left" class="compare"
+        camera-controls
+        interaction-prompt="none"
+        interaction-prompt-threshold="0"
+        alt="linkes Modell">
+      </model-viewer>
 
-const leftYearsDiv = document.getElementById("leftYears");
-const rightYearsDiv = document.getElementById("rightYears");
+      <!-- right/bottom model that will be clipped on the left -->
+      <model-viewer id="viewer-right" class="compare"
+        camera-controls
+        interaction-prompt="none"
+        interaction-prompt-threshold="0"
+        alt="rechtes Modell">
+      </model-viewer>
 
-years.forEach(y=>{
-    let l = document.createElement("div");
-    l.className = "yearBtn";
-    l.innerText = y;
-    l.onclick = () => loadModel(modelA_scene, y);
-    leftYearsDiv.appendChild(l);
+      <div id="slider" aria-hidden="false"></div>
+    </div>
+  </div>
 
-    let r = document.createElement("div");
-    r.className = "yearBtn";
-    r.innerText = y;
-    r.onclick = () => loadModel(modelB_scene, y);
-    rightYearsDiv.appendChild(r);
+<script>
+/* -------------------------
+   CONFIG: your file names
+   ------------------------- */
+const MODEL_LIST = [
+  "1150.glb",
+  "1175.glb",
+  "1374.glb",
+  "1550.glb",
+  "1630.glb",
+  "1936.glb"
+];
+
+/* ---------- sidebar buttons ---------- */
+const yearList = document.getElementById('year-list');
+MODEL_LIST.forEach(fn => {
+  const name = fn.replace(/\.glb$/i, '');
+  const btn = document.createElement('button');
+  btn.className = 'year-btn';
+  btn.textContent = name;
+  btn.onclick = () => { mainModel.src = fn; };
+  yearList.appendChild(btn);
 });
 
-/* -------------------------------
-   ZURÜCK BUTTON (optional)
-----------------------------------*/
-document.getElementById("zurueckBtn").onclick = () => {
-    window.location.reload();
-};
+/* show first model immediately */
+const mainModel = document.getElementById('main-model');
+mainModel.src = MODEL_LIST[0];
 
-/* -------------------------------
-   THREE.js SETUP für zwei Modelle
-----------------------------------*/
+/* ---------- compare UI elements ---------- */
+const compareBtn = document.getElementById('compare-btn');
+const compareOverlay = document.getElementById('compare-overlay');
+const compareBack = document.getElementById('compare-back');
+const leftList = document.getElementById('left-list');
+const rightList = document.getElementById('right-list');
+const viewerLeft = document.getElementById('viewer-left');
+const viewerRight = document.getElementById('viewer-right');
+const slider = document.getElementById('slider');
+const compareContainer = document.getElementById('compare-container');
 
-let width = window.innerWidth;
-let height = window.innerHeight;
+/* build side lists inside compare overlay */
+function buildCompareLists() {
+  leftList.innerHTML = '';
+  rightList.innerHTML = '';
+  MODEL_LIST.forEach(fn => {
+    const name = fn.replace(/\.glb$/i, '');
+    const bl = document.createElement('button');
+    bl.textContent = name;
+    bl.onclick = () => { viewerLeft.src = fn; };
+    leftList.appendChild(bl);
 
-// Zwei komplette Szenen
-let modelA_scene = new THREE.Scene();
-let modelB_scene = new THREE.Scene();
+    const br = document.createElement('button');
+    br.textContent = name;
+    br.onclick = () => { viewerRight.src = fn; };
+    rightList.appendChild(br);
+  });
+}
 
-let camera = new THREE.PerspectiveCamera(50, width/height, 0.1, 5000);
-camera.position.set(0, 80, 300);
+/* open compare */
+compareBtn.addEventListener('click', () => {
+  buildCompareLists();
+  compareOverlay.style.display = 'block';
+  compareOverlay.setAttribute('aria-hidden', 'false');
 
-// Renderer A
-let rendererA = new THREE.WebGLRenderer({canvas: document.getElementById("modelA"), antialias:true});
-rendererA.setSize(width, height);
-rendererA.setPixelRatio(window.devicePixelRatio);
+  // default models if not set
+  if (!viewerLeft.src) viewerLeft.src = MODEL_LIST[0];
+  if (!viewerRight.src) viewerRight.src = MODEL_LIST[MODEL_LIST.length - 1];
 
-// Renderer B
-let rendererB = new THREE.WebGLRenderer({canvas: document.getElementById("modelB"), antialias:true});
-rendererB.setSize(width, height);
-rendererB.setPixelRatio(window.devicePixelRatio);
-
-// Gemeinsame Controls (für beide identisch!)
-let controls = new OrbitControls(camera, rendererA.domElement);
-controls.enableDamping = true;
-
-// Gleiche Steuerung auch für Modell B
-controls.addEventListener("change", () => {
-    rendererB.render(modelB_scene, camera);
+  // center slider and clip
+  requestAnimationFrame(() => setSliderPercent(0.5));
 });
 
-// Licht in beiden Szenen
-function addLights(scene){
-    scene.add(new THREE.AmbientLight(0xffffff, 1));
-    let d = new THREE.DirectionalLight(0xffffff, 1);
-    d.position.set(100,200,100);
-    scene.add(d);
-}
-addLights(modelA_scene);
-addLights(modelB_scene);
+/* close compare */
+compareBack.addEventListener('click', () => {
+  compareOverlay.style.display = 'none';
+  compareOverlay.setAttribute('aria-hidden', 'true');
+});
 
-// Loader
-const loader = new GLTFLoader();
-
-/* -------------------------------
-   MODEL LADEN
-----------------------------------*/
-function loadModel(targetScene, year){
-    loader.load(year + ".glb", gltf => {
-
-        // Alte Modelle entfernen
-        while(targetScene.children.length > 0){
-            targetScene.remove(targetScene.children[0]);
-        }
-
-        let model = gltf.scene;
-        model.rotation.x = -Math.PI/2;
-        model.position.set(0,0,0);
-        targetScene.add(model);
-    });
-}
-
-// Standardmäßig erstes Modell laden
-loadModel(modelA_scene, "1150");
-loadModel(modelB_scene, "1175");
-
-/* -------------------------------
-   ANIMATION / RENDER
-----------------------------------*/
-function animate(){
-    requestAnimationFrame(animate);
-    controls.update();
-    rendererA.render(modelA_scene, camera);
-    rendererB.render(modelB_scene, camera);
-}
-animate();
-
-/* -------------------------------
-   SLIDER FUNKTION
-----------------------------------*/
-const slider = document.getElementById("slider");
+/* ---------- slider logic (drag + touch) ---------- */
 let dragging = false;
 
-slider.onmousedown = () => dragging = true;
-window.onmouseup = () => dragging = false;
+slider.addEventListener('mousedown', (e) => { e.preventDefault(); dragging = true; });
+window.addEventListener('mouseup', () => dragging = false);
+window.addEventListener('mouseleave', () => dragging = false);
 
-window.onmousemove = e => {
-    if(!dragging) return;
+window.addEventListener('mousemove', (e) => {
+  if (!dragging) return;
+  updateFromClientX(e.clientX);
+});
 
-    let x = e.clientX;
-    if(x < 0) x = 0;
-    if(x > window.innerWidth) x = window.innerWidth;
+slider.addEventListener('touchstart', (e) => { e.preventDefault(); dragging = true; });
+window.addEventListener('touchend', () => dragging = false);
+window.addEventListener('touchcancel', () => dragging = false);
+window.addEventListener('touchmove', (e) => {
+  if (!dragging) return;
+  updateFromClientX(e.touches[0].clientX);
+});
 
-    // Slider verschieben
-    slider.style.left = x + "px";
+function updateFromClientX(clientX) {
+  const rect = compareContainer.getBoundingClientRect();
+  // clamp inside container
+  const leftBound = rect.left + 10;
+  const rightBound = rect.right - 10;
+  const clamped = Math.min(Math.max(clientX, leftBound), rightBound);
+  const x = clamped - rect.left;
+  const pct = rect.width ? (x / rect.width) : 0.5;
+  setSliderPercent(pct);
+}
 
-    // Clip Mask für Modell B
-    let percent = (x / window.innerWidth) * 100;
-    document.getElementById("modelB").style.clipPath = `inset(0 0 0 ${percent}%)`;
-};
+function setSliderPercent(pct) {
+  pct = Math.min(Math.max(pct, 0.01), 0.99);
+  const rect = compareContainer.getBoundingClientRect();
+  const x = pct * rect.width;
+  // move slider (relative to compareContainer)
+  slider.style.left = (rect.left + x) + 'px';
+  // set clip-paths on viewers relative to container width (use px values)
+  viewerLeft.style.clipPath = `inset(0 ${Math.round(rect.width - x)}px 0 0)`;
+  viewerRight.style.clipPath = `inset(0 0 0 ${Math.round(x)}px)`;
+}
 
+/* When window resizes keep same relative slider position */
+let currentPct = 0.5;
+function recalcSliderOnResize() {
+  // read slider left relative to compareContainer and store pct
+  const rect = compareContainer.getBoundingClientRect();
+  const sliderRect = slider.getBoundingClientRect();
+  const x = sliderRect.left - rect.left;
+  currentPct = rect.width ? (x / rect.width) : 0.5;
+  setTimeout(()=> setSliderPercent(currentPct), 0);
+}
+window.addEventListener('resize', recalcSliderOnResize);
+
+/* ---------- Camera sync (bidirectional, stable) ---------- */
+let syncing = false;
+
+function copyCamera(source, target) {
+  if (!source || !target) return;
+  if (syncing) return;
+  syncing = true;
+  try {
+    // copy cameraOrbit (string), cameraTarget (string), fieldOfView (number)
+    if (source.cameraOrbit) target.cameraOrbit = source.cameraOrbit;
+    if (source.cameraTarget) target.cameraTarget = source.cameraTarget;
+    if (typeof source.fieldOfView !== 'undefined') target.fieldOfView = source.fieldOfView;
+  } catch (e) {
+    // ignore errors if viewer not ready
+  } finally {
+    // tiny delay to avoid recursion
+    setTimeout(() => { syncing = false; }, 0);
+  }
+}
+
+// listen to camera change events from both viewers
+viewerLeft.addEventListener('camera-change', () => copyCamera(viewerLeft, viewerRight));
+viewerRight.addEventListener('camera-change', () => copyCamera(viewerRight, viewerLeft));
+
+/* ---------- Prevent default interaction prompt & ensure still start ---------- */
+/* Set a safe initial cameraOrbit for both after load to avoid "preview motion" */
+function setInitialOrbitIfNeeded(viewer) {
+  try {
+    // a comfortable orbit: azimuth elevation radius
+    const initial = '0deg 75deg 2.5m';
+    viewer.cameraOrbit = initial;
+    viewer.cameraTarget = '0m 0m 0m';
+  } catch (e) {}
+}
+viewerLeft.addEventListener('load', () => setInitialOrbitIfNeeded(viewerLeft));
+viewerRight.addEventListener('load', () => setInitialOrbitIfNeeded(viewerRight));
+
+/* Hide interaction prompt via attributes (already set in HTML) and css ::part */
+
+/* Optional: close compare with Esc key */
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && compareOverlay.style.display === 'block') {
+    compareOverlay.style.display = 'none';
+  }
+});
 </script>
 </body>
 </html>
