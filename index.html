@@ -87,18 +87,17 @@
 
   /* COMPARE MODE (OVERLAY) */
   #compare-wrapper{
-    display:none; /* show when comparing */
+    display:none;
     position:fixed;
     left:var(--sidebar-width);
     top:0;
     width:calc(100vw - var(--sidebar-width));
     height:100vh;
-    background:white; /* requested white background */
+    background:white;
     z-index:1000;
     overflow:hidden;
   }
 
-  /* Back button top-left inside compare */
   #compare-back {
     position:absolute;
     top:16px;
@@ -112,7 +111,6 @@
     cursor:pointer;
   }
 
-  /* left/right selection lists (centered vertically) */
   .side-list {
     position:absolute;
     top:50%;
@@ -120,7 +118,7 @@
     display:flex;
     flex-direction:column;
     gap:10px;
-    z-index:2000; /* above viewers so clickable */
+    z-index:2000;
     width:160px;
   }
   #left-list { left:20px; }
@@ -136,43 +134,38 @@
   }
   .side-list button:hover{ background:#444; }
 
-  /* container that holds the two viewers stacked */
+  /* OVERLAYED MODELS */
   #compare-container{
     position:absolute;
     inset:0;
     overflow:hidden;
   }
 
-  /* both model-viewers cover full compare-container */
   model-viewer.compare-model {
     position:absolute;
     inset:0;
     width:100%;
     height:100%;
-    --poster-color: transparent;
-    /* allow user interaction (pointer) */
     pointer-events:auto;
+    --poster-color: transparent;
   }
 
-  /* initial clipping: left shows left half, right shows right half */
-  #model-left { clip-path: inset(0 50% 0 0); }
-  #model-right { clip-path: inset(0 0 0 50%); }
+  #model-right {
+    opacity:1; /* wird durch slider verändert */
+    transition: opacity 0.15s linear;
+  }
 
-  /* slider (vertical) centered */
-  #compare-slider {
+  /* opacity slider */
+  #opacity-slider {
     position:absolute;
-    top:0;
-    height:100%;
-    width:6px;
-    background:#ff3b3b;
+    bottom:30px;
     left:50%;
-    transform:translateX(-3px);
-    cursor:ew-resize;
-    z-index:1500;
-    border-radius:3px;
+    transform:translateX(-50%);
+    width:40%;
+    height:4px;
+    z-index:2000;
   }
 
-  /* hide model-viewer default UI parts that show interaction badges */
   model-viewer::part(default-controls){
     display:none !important;
   }
@@ -199,7 +192,7 @@
   </div>
 
   <!-- Compare overlay -->
-  <div id="compare-wrapper" aria-hidden="true">
+  <div id="compare-wrapper">
     <button id="compare-back">← Zurück</button>
 
     <div id="left-list" class="side-list"></div>
@@ -209,24 +202,23 @@
       <model-viewer id="model-left" class="compare-model"
         camera-controls
         interaction-prompt="none"
-        interaction-prompt-threshold="0"
-        alt="linkes Modell">
+        interaction-prompt-threshold="0">
       </model-viewer>
 
       <model-viewer id="model-right" class="compare-model"
         camera-controls
         interaction-prompt="none"
-        interaction-prompt-threshold="0"
-        alt="rechtes Modell">
+        interaction-prompt-threshold="0">
       </model-viewer>
     </div>
 
-    <div id="compare-slider" role="separator" aria-orientation="vertical"></div>
+    <!-- Opacity Slider -->
+    <input id="opacity-slider" type="range" min="0" max="1" step="0.01" value="0.5">
   </div>
 
 <script>
 /* ===========================
-   Models (use your filenames)
+   Models
    =========================== */
 const MODEL_LIST = [
   "1150.glb",
@@ -237,185 +229,86 @@ const MODEL_LIST = [
   "1936.glb"
 ];
 
-/* ---------- Populate sidebar years ---------- */
+/* Populate sidebar */
+const mainViewer = document.getElementById("main-model");
 const yearList = document.getElementById('year-list');
+
 MODEL_LIST.forEach(fn => {
-  const name = fn.replace(/\.glb$/i, '');
-  const b = document.createElement('button');
-  b.className = 'year-btn';
-  b.textContent = name;
-  b.onclick = () => {
-    document.getElementById('main-model').src = fn;
-  };
-  yearList.appendChild(b);
+  const name = fn.replace(/\.glb$/,'');
+  const btn = document.createElement("button");
+  btn.className = "year-btn";
+  btn.textContent = name;
+  btn.onclick = () => { mainViewer.src = fn; };
+  yearList.appendChild(btn);
 });
 
-/* show first model immediately */
-document.getElementById('main-model').src = MODEL_LIST[0];
+mainViewer.src = MODEL_LIST[0];
 
-/* ---------- compare elements ---------- */
-const compareBtn = document.getElementById('compare-btn');
-const compareWrapper = document.getElementById('compare-wrapper');
-const compareBack = document.getElementById('compare-back');
-const leftList = document.getElementById('left-list');
-const rightList = document.getElementById('right-list');
-const modelLeft = document.getElementById('model-left');
-const modelRight = document.getElementById('model-right');
-const slider = document.getElementById('compare-slider');
-const compareContainer = document.getElementById('compare-container');
+/* compare mode */
+const compareWrapper = document.getElementById("compare-wrapper");
+const compareBtn = document.getElementById("compare-btn");
+const compareBack = document.getElementById("compare-back");
+const leftList = document.getElementById("left-list");
+const rightList = document.getElementById("right-list");
+const modelLeft = document.getElementById("model-left");
+const modelRight = document.getElementById("model-right");
+const opacitySlider = document.getElementById("opacity-slider");
 
-/* Fill left/right lists with year buttons (centered vertically by CSS) */
-function buildCompareLists() {
-  leftList.innerHTML = '';
-  rightList.innerHTML = '';
+function buildLists(){
+  leftList.innerHTML = "";
+  rightList.innerHTML = "";
+
   MODEL_LIST.forEach(fn => {
-    const name = fn.replace(/\.glb$/i, '');
-    const bl = document.createElement('button');
+    const name = fn.replace(/\.glb$/,'');
+
+    const bl = document.createElement("button");
     bl.textContent = name;
     bl.onclick = () => { modelLeft.src = fn; };
     leftList.appendChild(bl);
 
-    const br = document.createElement('button');
+    const br = document.createElement("button");
     br.textContent = name;
     br.onclick = () => { modelRight.src = fn; };
     rightList.appendChild(br);
   });
 }
 
-/* ---------- open/close compare mode ---------- */
-compareBtn.addEventListener('click', () => {
-  // set compare visible
-  compareWrapper.style.display = 'block';
-  compareWrapper.setAttribute('aria-hidden', 'false');
+compareBtn.onclick = () => {
+  buildLists();
+  compareWrapper.style.display = "block";
 
-  // populate lists
-  buildCompareLists();
+  modelLeft.src = MODEL_LIST[0];
+  modelRight.src = MODEL_LIST[MODEL_LIST.length-1];
+};
 
-  // set default models (left=first, right=last) if not set
-  if (!modelLeft.src) modelLeft.src = MODEL_LIST[0];
-  if (!modelRight.src) modelRight.src = MODEL_LIST[MODEL_LIST.length - 1];
+compareBack.onclick = () => {
+  compareWrapper.style.display = "none";
+};
 
-  // position slider centered
-  requestAnimationFrame(() => {
-    positionSliderAtPercent(0.5);
-  });
-});
+/* opacity blend */
+opacitySlider.oninput = () => {
+  modelRight.style.opacity = opacitySlider.value;
+};
 
-compareBack.addEventListener('click', () => {
-  compareWrapper.style.display = 'none';
-  compareWrapper.setAttribute('aria-hidden', 'true');
-});
-
-/* ---------- calculate and set clip-paths relative to compare container ---------- */
-function positionSliderAtPercent(pct) {
-  // pct between 0..1 relative to compare-container width
-  const rect = compareContainer.getBoundingClientRect();
-  const width = rect.width;
-  const x = Math.min(Math.max(pct, 0.02), 0.98) * width;
-
-  // place slider (absolute left from compare-wrapper)
-  const wrapperRect = compareWrapper.getBoundingClientRect();
-  const leftOffset = rect.left - wrapperRect.left; // usually 0
-  slider.style.left = (leftOffset + x) + 'px';
-
-  // compute clip for left (hide right side from x..end)
-  modelLeft.style.clipPath = `inset(0 ${Math.round(width - x)}px 0 0)`;
-  // compute clip for right (hide left side up to x)
-  modelRight.style.clipPath = `inset(0 0 0 ${Math.round(x)}px)`;
-}
-
-/* ---------- MAKE SLIDER DRAGGABLE (mouse + touch) ---------- */
-let dragging = false;
-
-slider.addEventListener('mousedown', (ev) => {
-  ev.preventDefault();
-  dragging = true;
-});
-window.addEventListener('mouseup', () => dragging = false);
-window.addEventListener('mouseleave', () => dragging = false);
-
-window.addEventListener('mousemove', (ev) => {
-  if (!dragging) return;
-  updateSliderFromClientX(ev.clientX);
-});
-
-// Touch support
-slider.addEventListener('touchstart', (ev) => { ev.preventDefault(); dragging = true; });
-window.addEventListener('touchend', () => dragging = false);
-window.addEventListener('touchcancel', () => dragging = false);
-window.addEventListener('touchmove', (ev) => {
-  if (!dragging) return;
-  updateSliderFromClientX(ev.touches[0].clientX);
-});
-
-function updateSliderFromClientX(clientX) {
-  const rect = compareContainer.getBoundingClientRect();
-  // clamp to container
-  const leftBoundary = rect.left + 20; // small padding
-  const rightBoundary = rect.right - 20;
-  const clampedX = Math.min(Math.max(clientX, leftBoundary), rightBoundary);
-  const pct = (clampedX - rect.left) / rect.width;
-  positionSliderAtPercent(pct);
-}
-
-/* ---------- camera sync (bidirectional, without loop) ---------- */
+/* ---- CAMERA SYNC ---- */
 let syncing = false;
 
-function syncCamera(source, target) {
-  if (syncing) return;
+function sync(source, target){
+  if(syncing) return;
   syncing = true;
+
   try {
-    // model-viewer exposes cameraOrbit, cameraTarget and fieldOfView properties
     target.cameraOrbit = source.cameraOrbit;
     target.cameraTarget = source.cameraTarget;
     target.fieldOfView = source.fieldOfView;
-  } catch (e) {
-    // ignore if not ready yet
-  } finally {
-    // tiny delay to avoid recursive loop issues
-    setTimeout(() => { syncing = false; }, 0);
-  }
+  } catch(e){}
+
+  setTimeout(()=> syncing=false,0);
 }
 
-modelLeft.addEventListener('camera-change', () => syncCamera(modelLeft, modelRight));
-modelRight.addEventListener('camera-change', () => syncCamera(modelRight, modelLeft));
+modelLeft.addEventListener("camera-change",()=>sync(modelLeft,modelRight));
+modelRight.addEventListener("camera-change",()=>sync(modelRight,modelLeft));
 
-/* Ensure nothing auto-rotates or auto-animates on load:
-   We do not set auto-rotate attributes anywhere, and interaction prompt removed via attributes and CSS.
-   Optionally set a fixed initial cameraOrbit for both to avoid initial movement: */
-function setInitialOrbits() {
-  // choose a comfortable starting orbit (azimuth elevation radius). Adjust if needed.
-  // format: "<azimuth>deg <elevation>deg <radius>"
-  const initial = '0deg 75deg 2.5m';
-  try {
-    modelLeft.cameraOrbit = initial;
-    modelRight.cameraOrbit = initial;
-    modelLeft.cameraTarget = '0m 0m 0m';
-    modelRight.cameraTarget = '0m 0m 0m';
-  } catch (e) {}
-}
-
-// set initial orbits once viewers are ready
-modelLeft.addEventListener('load', setInitialOrbits);
-modelRight.addEventListener('load', setInitialOrbits);
-
-/* Make sure clicks on side buttons are above model viewers (z-index already set in CSS).
-   Also ensure keyboard ESC closes compare mode */
-window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && compareWrapper.style.display === 'block') {
-    compareWrapper.style.display = 'none';
-  }
-});
-
-/* On window resize keep slider centered relative to new size */
-window.addEventListener('resize', () => {
-  // keep same visual center by recalculating based on current slider left
-  const rect = compareContainer.getBoundingClientRect();
-  const sliderRect = slider.getBoundingClientRect();
-  const x = sliderRect.left - rect.left;
-  const pct = rect.width ? (x / rect.width) : 0.5;
-  positionSliderAtPercent(pct);
-});
 </script>
 </body>
 </html>
