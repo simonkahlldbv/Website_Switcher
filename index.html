@@ -2,284 +2,242 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<title>3D Modellvergleich</title>
-
-<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
-
+<title>3D Vergleich</title>
 <style>
-body {
-  margin: 0;
-  font-family: Arial, sans-serif;
-  height: 100vh;
-  overflow: hidden;
-  display: flex;
-}
+    body {
+        margin: 0;
+        overflow: hidden;
+        background: white;
+        font-family: Arial, sans-serif;
+    }
 
-/* Sidebar */
-#sidebar {
-  width: 220px;
-  background: #1e1e1e;
-  color: white;
-  padding: 20px;
-  box-sizing: border-box;
-  display: flex;
-  flex-direction: column;
-}
+    #zurueckBtn {
+        position: fixed;
+        top: 20px;
+        left: 20px;
+        z-index: 30;
+        padding: 10px 20px;
+        background: #222;
+        color: white;
+        border-radius: 8px;
+        cursor: pointer;
+    }
 
-.year-btn {
-  background: #333;
-  color: white;
-  padding: 12px;
-  margin-bottom: 10px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 16px;
-}
+    /* Die beiden Model-Container liegen exakt übereinander! */
+    #viewerContainer {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+    }
 
-.year-btn:hover {
-  background: #555;
-}
+    canvas {
+        position: absolute;
+        top: 0;
+        left: 0;
+    }
 
-#compare-start {
-  margin-top: auto;
-  padding: 14px;
-  font-size: 16px;
-  background: #0066ff;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-}
+    #modelA {
+        z-index: 5;
+    }
 
-#compare-start:hover {
-  background: #0050cc;
-}
+    #modelB {
+        z-index: 6;
+        /* Anfangs wird Modell B rechts angezeigt */
+        clip-path: inset(0 0 0 50%);
+    }
 
-/* Main viewer */
-#main-viewer {
-  flex: 1;
-  background: #f2f2f2;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-}
+    /* Slider */
+    #slider {
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 4px;
+        height: 100%;
+        background: red;
+        z-index: 20;
+        cursor: ew-resize;
+    }
 
-#main-viewer model-viewer {
-  width: 80%;
-  height: 80%;
-}
+    /* Jahr-Buttons links und rechts */
+    .yearList {
+        position: fixed;
+        top: 20%;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        z-index: 40;
+    }
 
-/* Vergleichsmodus */
-#compare-mode {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  background: white;
-  display: none;
-  z-index: 9999;
-}
+    #leftYears { left: 20px; }
+    #rightYears { right: 20px; }
 
-/* Zurück-Button */
-#back-btn {
-  position: absolute;
-  top: 20px;
-  left: 20px;
-  background: #222;
-  color: white;
-  border: none;
-  padding: 12px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  z-index: 10000;
-}
-
-#back-btn:hover {
-  background: #444;
-}
-
-/* Vergleichsbereiche */
-#top-model,
-#bottom-model {
-  position: absolute;
-  width: 100%;
-  height: 50%;
-  overflow: hidden;
-}
-
-#top-model {
-  top: 0;
-}
-
-#bottom-model {
-  bottom: 0;
-}
-
-/* Senkrechter Slider */
-#slider {
-  position: absolute;
-  top: 0;
-  left: 50%;
-  width: 4px;
-  height: 100%;
-  background: red;
-  cursor: ew-resize;
-  z-index: 10001;
-}
-
-/* Auswahlleisten */
-.selector-left,
-.selector-right {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.selector-left {
-  left: 20px;
-}
-
-.selector-right {
-  right: 20px;
-}
-
-.sel-btn {
-  background: #333;
-  color: white;
-  padding: 10px 14px;
-  border-radius: 6px;
-  border: none;
-  cursor: pointer;
-}
-
-.sel-btn:hover {
-  background: #555;
-}
-
-model-viewer {
-  --poster-color: transparent;
-}
+    .yearBtn {
+        background: #222;
+        color: white;
+        padding: 8px 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        text-align: center;
+        width: 60px;
+    }
 </style>
 </head>
 <body>
 
-<!-- Sidebar -->
-<div id="sidebar">
-  <h3>Modelle</h3>
+<div id="zurueckBtn">← Zurück</div>
 
-  <button class="year-btn" onclick="showModel('1150.glb')">1150</button>
-  <button class="year-btn" onclick="showModel('1175.glb')">1175</button>
-  <button class="year-btn" onclick="showModel('1374.glb')">1374</button>
-  <button class="year-btn" onclick="showModel('1550.glb')">1550</button>
-  <button class="year-btn" onclick="showModel('1630.glb')">1630</button>
-  <button class="year-btn" onclick="showModel('1936.glb')">1936</button>
+<!-- Jahr-Listen -->
+<div id="leftYears" class="yearList"></div>
+<div id="rightYears" class="yearList"></div>
 
-  <button id="compare-start" onclick="startCompare()">Vergleichen</button>
+<!-- 3D Bereich -->
+<div id="viewerContainer">
+    <canvas id="modelA"></canvas>
+    <canvas id="modelB"></canvas>
 </div>
 
-<!-- Main viewer -->
-<div id="main-viewer">
-  <model-viewer id="main-model" camera-controls></model-viewer>
-</div>
+<!-- Slider -->
+<div id="slider"></div>
 
-<!-- Vergleichsmodus -->
-<div id="compare-mode">
+<script type="module">
+import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.153/build/three.module.js';
+import { OrbitControls } from 'https://cdn.jsdelivr.net/npm/three@0.153/examples/jsm/controls/OrbitControls.js';
+import { GLTFLoader } from 'https://cdn.jsdelivr.net/npm/three@0.153/examples/jsm/loaders/GLTFLoader.js';
 
-  <button id="back-btn" onclick="exitCompare()">← Zurück</button>
+/* -------------------------------
+   MODEL-NAMEN
+----------------------------------*/
+const years = ["1150","1175","1374","1550","1630","1936"];
 
-  <!-- Top model -->
-  <div id="top-model">
-    <model-viewer id="mvA" camera-controls></model-viewer>
-  </div>
+const leftYearsDiv = document.getElementById("leftYears");
+const rightYearsDiv = document.getElementById("rightYears");
 
-  <!-- Bottom model -->
-  <div id="bottom-model">
-    <model-viewer id="mvB" camera-controls></model-viewer>
-  </div>
+years.forEach(y=>{
+    let l = document.createElement("div");
+    l.className = "yearBtn";
+    l.innerText = y;
+    l.onclick = () => loadModel(modelA_scene, y);
+    leftYearsDiv.appendChild(l);
 
-  <!-- Slider -->
-  <div id="slider"></div>
-
-  <!-- Auswahl links -->
-  <div class="selector-left">
-    <button class="sel-btn" onclick="loadA('1150.glb')">1150</button>
-    <button class="sel-btn" onclick="loadA('1175.glb')">1175</button>
-    <button class="sel-btn" onclick="loadA('1374.glb')">1374</button>
-    <button class="sel-btn" onclick="loadA('1550.glb')">1550</button>
-    <button class="sel-btn" onclick="loadA('1630.glb')">1630</button>
-    <button class="sel-btn" onclick="loadA('1936.glb')">1936</button>
-  </div>
-
-  <!-- Auswahl rechts -->
-  <div class="selector-right">
-    <button class="sel-btn" onclick="loadB('1150.glb')">1150</button>
-    <button class="sel-btn" onclick="loadB('1175.glb')">1175</button>
-    <button class="sel-btn" onclick="loadB('1374.glb')">1374</button>
-    <button class="sel-btn" onclick="loadB('1550.glb')">1550</button>
-    <button class="sel-btn" onclick="loadB('1630.glb')">1630</button>
-    <button class="sel-btn" onclick="loadB('1936.glb')">1936</button>
-  </div>
-
-</div>
-
-<script>
-function showModel(file) {
-  document.getElementById("main-model").src = file;
-}
-
-/* Start compare */
-function startCompare() {
-  document.getElementById("compare-mode").style.display = "block";
-
-  // Standard: beide 1150
-  mvA.src = "1150.glb";
-  mvB.src = "1150.glb";
-}
-
-/* Exit compare */
-function exitCompare() {
-  document.getElementById("compare-mode").style.display = "none";
-}
-
-/* Load models */
-function loadA(file) { mvA.src = file; }
-function loadB(file) { mvB.src = file; }
-
-/* Slider movement */
-let sliding = false;
-const slider = document.getElementById("slider");
-
-slider.addEventListener("mousedown", () => sliding = true);
-window.addEventListener("mouseup", () => sliding = false);
-window.addEventListener("mousemove", (e) => {
-  if (!sliding) return;
-  let x = Math.max(50, Math.min(window.innerWidth - 50, e.clientX));
-  slider.style.left = x + "px";
+    let r = document.createElement("div");
+    r.className = "yearBtn";
+    r.innerText = y;
+    r.onclick = () => loadModel(modelB_scene, y);
+    rightYearsDiv.appendChild(r);
 });
 
-/* --- SYNCHRONISIERTE KAMERA BEWEGUNG --- */
+/* -------------------------------
+   ZURÜCK BUTTON (optional)
+----------------------------------*/
+document.getElementById("zurueckBtn").onclick = () => {
+    window.location.reload();
+};
 
-const mvA = document.getElementById("mvA");
-const mvB = document.getElementById("mvB");
+/* -------------------------------
+   THREE.js SETUP für zwei Modelle
+----------------------------------*/
 
-function syncCamera(event) {
-  let source = event.target;
-  let target = source === mvA ? mvB : mvA;
+let width = window.innerWidth;
+let height = window.innerHeight;
 
-  let orbit = source.getCameraOrbit();
-  let targetOrbit = `${orbit.theta}rad ${orbit.phi}rad ${orbit.radius}m`;
+// Zwei komplette Szenen
+let modelA_scene = new THREE.Scene();
+let modelB_scene = new THREE.Scene();
 
-  target.cameraOrbit = targetOrbit;
-  target.fieldOfView = source.fieldOfView;
+let camera = new THREE.PerspectiveCamera(50, width/height, 0.1, 5000);
+camera.position.set(0, 80, 300);
+
+// Renderer A
+let rendererA = new THREE.WebGLRenderer({canvas: document.getElementById("modelA"), antialias:true});
+rendererA.setSize(width, height);
+rendererA.setPixelRatio(window.devicePixelRatio);
+
+// Renderer B
+let rendererB = new THREE.WebGLRenderer({canvas: document.getElementById("modelB"), antialias:true});
+rendererB.setSize(width, height);
+rendererB.setPixelRatio(window.devicePixelRatio);
+
+// Gemeinsame Controls (für beide identisch!)
+let controls = new OrbitControls(camera, rendererA.domElement);
+controls.enableDamping = true;
+
+// Gleiche Steuerung auch für Modell B
+controls.addEventListener("change", () => {
+    rendererB.render(modelB_scene, camera);
+});
+
+// Licht in beiden Szenen
+function addLights(scene){
+    scene.add(new THREE.AmbientLight(0xffffff, 1));
+    let d = new THREE.DirectionalLight(0xffffff, 1);
+    d.position.set(100,200,100);
+    scene.add(d);
+}
+addLights(modelA_scene);
+addLights(modelB_scene);
+
+// Loader
+const loader = new GLTFLoader();
+
+/* -------------------------------
+   MODEL LADEN
+----------------------------------*/
+function loadModel(targetScene, year){
+    loader.load(year + ".glb", gltf => {
+
+        // Alte Modelle entfernen
+        while(targetScene.children.length > 0){
+            targetScene.remove(targetScene.children[0]);
+        }
+
+        let model = gltf.scene;
+        model.rotation.x = -Math.PI/2;
+        model.position.set(0,0,0);
+        targetScene.add(model);
+    });
 }
 
-mvA.addEventListener("camera-change", syncCamera);
-mvB.addEventListener("camera-change", syncCamera);
+// Standardmäßig erstes Modell laden
+loadModel(modelA_scene, "1150");
+loadModel(modelB_scene, "1175");
+
+/* -------------------------------
+   ANIMATION / RENDER
+----------------------------------*/
+function animate(){
+    requestAnimationFrame(animate);
+    controls.update();
+    rendererA.render(modelA_scene, camera);
+    rendererB.render(modelB_scene, camera);
+}
+animate();
+
+/* -------------------------------
+   SLIDER FUNKTION
+----------------------------------*/
+const slider = document.getElementById("slider");
+let dragging = false;
+
+slider.onmousedown = () => dragging = true;
+window.onmouseup = () => dragging = false;
+
+window.onmousemove = e => {
+    if(!dragging) return;
+
+    let x = e.clientX;
+    if(x < 0) x = 0;
+    if(x > window.innerWidth) x = window.innerWidth;
+
+    // Slider verschieben
+    slider.style.left = x + "px";
+
+    // Clip Mask für Modell B
+    let percent = (x / window.innerWidth) * 100;
+    document.getElementById("modelB").style.clipPath = `inset(0 0 0 ${percent}%)`;
+};
 
 </script>
 </body>
