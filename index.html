@@ -1,171 +1,232 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3D Stadtmodelle Vergleich</title>
+    <meta charset="UTF-8">
+    <title>3D Model Viewer & Compare</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #111;
+            color: white;
+            font-family: sans-serif;
+        }
 
-<style>
-body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; background: white; }
-#sidebar { position: fixed; top: 0; left: 0; width: 220px; height: 100vh; background: #1e1e1e; padding: 20px; color: white; z-index: 10; }
-h2 { margin-top: 0; }
-.year-btn, .compare-btn { width: 100%; padding: 10px; margin-bottom: 10px; border: none; border-radius: 5px; cursor: pointer; text-align: left; color: white; background: #333; }
-.year-btn:hover, .compare-btn:hover { background: #444; }
-#compareBtn { width: 100%; margin-top: 15px; padding: 10px; border: none; background: #007bff; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
-#compareBtn:hover { background: #005ce6; }
-#viewContainer { position: fixed; top: 0; left: 220px; width: calc(100vw - 220px); height: 100vh; background: white; }
-#backBtn { position: fixed; top: 15px; left: 15px; z-index: 20; padding: 10px 15px; background: black; color: white; border-radius: 5px; cursor: pointer; display: none; }
-#compareLeft, #compareRight { position: fixed; width: 200px; top: 100px; z-index: 20; display: none; }
-#compareLeft { left: 20px; }
-#compareRight { right: 20px; }
-#slider { position: fixed; top: 0; left: 50%; width: 6px; height: 100%; background: red; cursor: ew-resize; display: none; z-index: 15; }
-#rightMask { position: fixed; top: 0; right: 0; height: 100vh; background: white; pointer-events: none; display: none; }
-</style>
+        #ui {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            z-index: 20;
+        }
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.152/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.152/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.152/examples/js/controls/OrbitControls.js"></script>
+        button {
+            padding: 8px 12px;
+            margin: 4px;
+            font-size: 14px;
+        }
 
+        #compareWrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none;
+        }
+
+        #leftView, #rightView {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        #rightView {
+            overflow: hidden;
+        }
+
+        #slider {
+            position: fixed;
+            top: 0;
+            left: 50%;
+            width: 5px;
+            height: 100%;
+            background: white;
+            cursor: ew-resize;
+            z-index: 30;
+        }
+    </style>
 </head>
+
 <body>
 
-<div id="sidebar">
-    <h2>Modelle</h2>
-    <button class="year-btn" onclick="loadSingleModel('./1150.glb')">1150</button>
-    <button class="year-btn" onclick="loadSingleModel('./1175.glb')">1175</button>
-    <button class="year-btn" onclick="loadSingleModel('./1374.glb')">1374</button>
-    <button class="year-btn" onclick="loadSingleModel('./1550.glb')">1550</button>
-    <button class="year-btn" onclick="loadSingleModel('./1630.glb')">1630</button>
-    <button class="year-btn" onclick="loadSingleModel('./1936.glb')">1936</button>
-    <button id="compareBtn" onclick="enterCompareMode()">Vergleichen</button>
+<div id="ui">
+    <button onclick="loadSingle('1150.glb')">1150</button>
+    <button onclick="loadSingle('1200.glb')">1200</button>
+    <button onclick="loadSingle('1250.glb')">1250</button>
+
+    <br><br>
+
+    <button onclick="startCompare('1150.glb','1250.glb')">1150 ↔ 1250</button>
+    <button onclick="startCompare('1150.glb','1200.glb')">1150 ↔ 1200</button>
 </div>
 
-<div id="viewContainer"></div>
-<div id="backBtn" onclick="exitCompareMode()">← Zurück</div>
-
-<div id="compareLeft">
-    <button class="compare-btn" onclick="loadCompareLeft('./1150.glb')">1150</button>
-    <button class="compare-btn" onclick="loadCompareLeft('./1175.glb')">1175</button>
-    <button class="compare-btn" onclick="loadCompareLeft('./1374.glb')">1374</button>
-    <button class="compare-btn" onclick="loadCompareLeft('./1550.glb')">1550</button>
-    <button class="compare-btn" onclick="loadCompareLeft('./1630.glb')">1630</button>
-    <button class="compare-btn" onclick="loadCompareLeft('./1936.glb')">1936</button>
+<div id="compareWrapper" style="display:none;">
+    <div id="leftView"></div>
+    <div id="rightView"></div>
+    <div id="slider"></div>
 </div>
 
-<div id="compareRight">
-    <button class="compare-btn" onclick="loadCompareRight('./1150.glb')">1150</button>
-    <button class="compare-btn" onclick="loadCompareRight('./1175.glb')">1175</button>
-    <button class="compare-btn" onclick="loadCompareRight('./1374.glb')">1374</button>
-    <button class="compare-btn" onclick="loadCompareRight('./1550.glb')">1550</button>
-    <button class="compare-btn" onclick="loadCompareRight('./1630.glb')">1630</button>
-    <button class="compare-btn" onclick="loadCompareRight('./1936.glb')">1936</button>
-</div>
-
-<div id="slider"></div>
-<div id="rightMask"></div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
 
 <script>
-let scene = new THREE.Scene();
-let camera = new THREE.PerspectiveCamera(45, (window.innerWidth-220)/window.innerHeight, 0.1, 2000);
-camera.position.set(0, 250, 350);
-
-let renderer = new THREE.WebGLRenderer({ antialias: true });
-renderer.setSize(window.innerWidth - 220, window.innerHeight);
-renderer.setClearColor(0xffffff, 1);
-document.getElementById("viewContainer").appendChild(renderer.domElement);
-
-let controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.dampingFactor = 0.05;
-controls.rotateSpeed = 0.6;
-controls.zoomSpeed = 0.8;
-controls.enablePan = false;
+/* ================================
+   GLOBAL VARS
+================================ */
+let scene, camera, controls, rendererSingle;
+let rendererLeft, rendererRight;
 
 let loader = new THREE.GLTFLoader();
+
 let modelSingle = null;
 let modelLeft = null;
 let modelRight = null;
 
-function clearScene() {
-    while(scene.children.length) scene.remove(scene.children[0]);
+let comparing = false;
+
+
+/* ================================
+   INIT NORMAL MODE
+================================ */
+function initScene() {
+    scene = new THREE.Scene();
+
+    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
+    camera.position.set(0, 1.2, 2.5);
+
+    rendererSingle = new THREE.WebGLRenderer({ antialias: true });
+    rendererSingle.setSize(window.innerWidth, window.innerHeight);
+    document.body.appendChild(rendererSingle.domElement);
+
+    controls = new THREE.OrbitControls(camera, rendererSingle.domElement);
+
+    let light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
+    scene.add(light);
+
+    animate();
 }
 
-function loadSingleModel(file) {
-    exitCompareMode();
-    clearScene();
+initScene();
+
+
+/* ================================
+   LOAD SINGLE MODEL
+================================ */
+function loadSingle(file) {
+    comparing = false;
+    document.getElementById("compareWrapper").style.display = "none";
+
+    if (rendererLeft) rendererLeft.domElement.style.display = "none";
+    if (rendererRight) rendererRight.domElement.style.display = "none";
+
+    if (modelSingle) scene.remove(modelSingle);
+
     loader.load(file, gltf => {
         modelSingle = gltf.scene;
-        modelSingle.position.set(0,0,0);
+        modelSingle.position.set(0, 0, 0);
         scene.add(modelSingle);
     });
 }
 
-function enterCompareMode() {
-    document.getElementById("sidebar").style.display = "none";
-    document.getElementById("backBtn").style.display = "block";
-    document.getElementById("compareLeft").style.display = "block";
-    document.getElementById("compareRight").style.display = "block";
-    slider.style.display = "block";
-    rightMask.style.display = "block";
-    rightMask.style.width = "50vw";
-    clearScene();
-}
 
-function exitCompareMode() {
-    document.getElementById("sidebar").style.display = "block";
-    document.getElementById("backBtn").style.display = "none";
-    document.getElementById("compareLeft").style.display = "none";
-    document.getElementById("compareRight").style.display = "none";
-    slider.style.display = "none";
-    rightMask.style.display = "none";
-    clearScene();
-}
+/* ================================
+   START COMPARE MODE (TWO MODELS)
+================================ */
+function startCompare(fileLeft, fileRight) {
+    comparing = true;
 
-function loadCompareLeft(file) {
-    if(modelLeft) scene.remove(modelLeft);
-    loader.load(file, gltf=>{
-        modelLeft = gltf.scene;
-        modelLeft.position.set(0,0,0);
-        scene.add(modelLeft);
-        applyRightMask();
-    });
-}
+    document.getElementById("compareWrapper").style.display = "block";
 
-function loadCompareRight(file) {
-    if(modelRight) scene.remove(modelRight);
-    loader.load(file, gltf=>{
-        modelRight = gltf.scene;
-        modelRight.position.set(0,0,0);
-        scene.add(modelRight);
-        applyRightMask();
-    });
-}
+    if (!rendererLeft) {
+        rendererLeft = new THREE.WebGLRenderer({ antialias: true });
+        rendererRight = new THREE.WebGLRenderer({ antialias: true });
 
-/* Masken-Logik für den Slider */
-let dragging = false;
-slider.onmousedown = ()=>dragging=true;
-document.onmouseup = ()=>dragging=false;
-document.onmousemove = e=>{
-    if(!dragging) return;
-    let x = e.clientX;
-    slider.style.left = x+"px";
-    rightMask.style.width = (window.innerWidth - x)+"px";
-};
+        rendererLeft.setSize(window.innerWidth, window.innerHeight);
+        rendererRight.setSize(window.innerWidth, window.innerHeight);
 
-function applyRightMask(){
-    if(modelRight){
-        rightMask.style.display = 'block';
-        rightMask.style.width = '50vw';
+        document.getElementById("leftView").appendChild(rendererLeft.domElement);
+        document.getElementById("rightView").appendChild(rendererRight.domElement);
     }
+
+    // load left model
+    if (modelLeft) scene.remove(modelLeft);
+    loader.load(fileLeft, gltf => {
+        modelLeft = gltf.scene;
+        modelLeft.position.set(0, 0, 0);
+        scene.add(modelLeft);
+    });
+
+    // load right model
+    if (modelRight) scene.remove(modelRight);
+    loader.load(fileRight, gltf => {
+        modelRight = gltf.scene;
+        modelRight.position.set(0, 0, 0);
+        scene.add(modelRight);
+    });
 }
 
-/* Animation */
-function animate(){
+
+/* ================================
+   SLIDER CONTROL
+================================ */
+const slider = document.getElementById("slider");
+
+let dragging = false;
+
+slider.addEventListener("mousedown", () => dragging = true);
+document.addEventListener("mouseup", () => dragging = false);
+document.addEventListener("mousemove", e => {
+    if (!dragging) return;
+
+    let x = e.clientX;
+    slider.style.left = x + "px";
+    document.getElementById("rightView").style.width = x + "px";
+});
+
+
+/* ================================
+   ANIMATION LOOP
+================================ */
+function animate() {
     requestAnimationFrame(animate);
+
+    if (!comparing) {
+        rendererSingle.render(scene, camera);
+    } else {
+        rendererLeft.render(scene, camera);
+        rendererRight.render(scene, camera);
+    }
+
     controls.update();
-    renderer.render(scene, camera);
 }
-animate();
+
+
+/* ================================
+   RESIZE
+================================ */
+window.addEventListener("resize", () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+
+    rendererSingle.setSize(window.innerWidth, window.innerHeight);
+
+    if (rendererLeft) rendererLeft.setSize(window.innerWidth, window.innerHeight);
+    if (rendererRight) rendererRight.setSize(window.innerWidth, window.innerHeight);
+});
 </script>
 
 </body>
