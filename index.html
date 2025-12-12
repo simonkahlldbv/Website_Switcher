@@ -3,125 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>3D Stadtmodelle</title>
+<title>3D Stadtmodelle Vergleich</title>
 
 <style>
-    body {
-        margin: 0;
-        overflow: hidden;
-        font-family: Arial, sans-serif;
-        background: white;
-    }
-
-    /* Sidebar */
-    #sidebar {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 220px;
-        height: 100vh;
-        background: #1e1e1e;
-        padding: 20px;
-        color: white;
-        z-index: 10;
-    }
-
+    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; background: white; }
+    #sidebar { position: fixed; top: 0; left: 0; width: 220px; height: 100vh; background: #1e1e1e; padding: 20px; color: white; z-index: 10; }
     h2 { margin-top: 0; }
-
-    .year-btn {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 10px;
-        border: none;
-        background: #333;
-        color: white;
-        border-radius: 5px;
-        cursor: pointer;
-        text-align: left;
-    }
-    .year-btn:hover { background: #444; }
-
-    #compareBtn {
-        width: 100%;
-        margin-top: 15px;
-        padding: 10px;
-        border: none;
-        background: #007bff;
-        color: white;
-        border-radius: 5px;
-        cursor: pointer;
-        font-weight: bold;
-    }
+    .year-btn, .compare-btn { width: 100%; padding: 10px; margin-bottom: 10px; border: none; border-radius: 5px; cursor: pointer; text-align: left; color: white; background: #333; }
+    .year-btn:hover, .compare-btn:hover { background: #444; }
+    #compareBtn { width: 100%; margin-top: 15px; padding: 10px; border: none; background: #007bff; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
     #compareBtn:hover { background: #005ce6; }
-
-    /* Canvas Bereich */
-    #viewContainer {
-        position: fixed;
-        top: 0;
-        left: 220px;
-        width: calc(100vw - 220px);
-        height: 100vh;
-        background: white;
-    }
-
-    /* Vergleichsmodus */
-    #backBtn {
-        position: fixed;
-        top: 15px;
-        left: 15px;
-        z-index: 20;
-        padding: 10px 15px;
-        background: black;
-        color: white;
-        border-radius: 5px;
-        cursor: pointer;
-        display: none;
-    }
-
-    #compareLeft, #compareRight {
-        position: fixed;
-        width: 200px;
-        top: 100px;
-        z-index: 20;
-        display: none;
-    }
+    #viewContainer { position: fixed; top: 0; left: 220px; width: calc(100vw - 220px); height: 100vh; background: white; }
+    #backBtn { position: fixed; top: 15px; left: 15px; z-index: 20; padding: 10px 15px; background: black; color: white; border-radius: 5px; cursor: pointer; display: none; }
+    #compareLeft, #compareRight { position: fixed; width: 200px; top: 100px; z-index: 20; display: none; }
     #compareLeft { left: 20px; }
     #compareRight { right: 20px; }
-
-    .compare-btn {
-        width: 100%;
-        padding: 10px;
-        background: #222;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        margin-bottom: 10px;
-        cursor: pointer;
-    }
-    .compare-btn:hover { background: #333; }
-
-    /* Slider */
-    #slider {
-        position: fixed;
-        top: 0;
-        left: 50%;
-        width: 6px;
-        height: 100%;
-        background: red;
-        cursor: ew-resize;
-        display: none;
-        z-index: 15;
-    }
-
-    #rightMask {
-        position: fixed;
-        top: 0;
-        right: 0;
-        height: 100vh;
-        background: white;
-        pointer-events: none;
-        display: none;
-    }
+    #slider { position: fixed; top: 0; left: 50%; width: 6px; height: 100%; background: red; cursor: ew-resize; display: none; z-index: 15; }
+    #rightMask { position: fixed; top: 0; right: 0; height: 100vh; background: white; pointer-events: none; display: none; }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152/build/three.min.js"></script>
@@ -133,19 +31,16 @@
 
 <div id="sidebar">
     <h2>Modelle</h2>
-
     <button class="year-btn" onclick="loadSingleModel('1150.glb')">1150</button>
     <button class="year-btn" onclick="loadSingleModel('1175.glb')">1175</button>
     <button class="year-btn" onclick="loadSingleModel('1374.glb')">1374</button>
     <button class="year-btn" onclick="loadSingleModel('1550.glb')">1550</button>
     <button class="year-btn" onclick="loadSingleModel('1630.glb')">1630</button>
     <button class="year-btn" onclick="loadSingleModel('1936.glb')">1936</button>
-
     <button id="compareBtn" onclick="enterCompareMode()">Vergleichen</button>
 </div>
 
 <div id="viewContainer"></div>
-
 <div id="backBtn" onclick="exitCompareMode()">← Zurück</div>
 
 <div id="compareLeft">
@@ -170,7 +65,6 @@
 <div id="rightMask"></div>
 
 <script>
-/* Grundsetup */
 let scene = new THREE.Scene();
 let camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
 camera.position.set(0, 250, 350);
@@ -188,27 +82,19 @@ controls.zoomSpeed = 0.8;
 controls.panSpeed = 0.8;
 controls.enablePan = false;
 
-/* Beide Scenes übereinander */
-let rightMask = document.getElementById("rightMask");
-let slider = document.getElementById("slider");
-
 let loader = new THREE.GLTFLoader();
 
-let modelSingle;
-
+let modelSingle = null;
 let modelLeft = null;
 let modelRight = null;
 
 function clearScene() {
-    while (scene.children.length > 0) {
-        scene.remove(scene.children[0]);
-    }
+    while (scene.children.length > 0) scene.remove(scene.children[0]);
 }
 
 function loadSingleModel(file) {
     exitCompareMode();
     clearScene();
-
     loader.load(file, gltf => {
         modelSingle = gltf.scene;
         modelSingle.position.set(0, 0, 0);
@@ -216,7 +102,6 @@ function loadSingleModel(file) {
     });
 }
 
-/* Vergleich */
 function enterCompareMode() {
     document.getElementById("sidebar").style.display = "none";
     document.getElementById("backBtn").style.display = "block";
@@ -224,9 +109,7 @@ function enterCompareMode() {
     document.getElementById("compareRight").style.display = "block";
     slider.style.display = "block";
     rightMask.style.display = "block";
-
     rightMask.style.width = "50vw";
-
     clearScene();
 }
 
@@ -237,64 +120,60 @@ function exitCompareMode() {
     document.getElementById("compareRight").style.display = "none";
     slider.style.display = "none";
     rightMask.style.display = "none";
-
     clearScene();
 }
 
-/* Modelle laden */
 function loadCompareLeft(file) {
     if (modelLeft) scene.remove(modelLeft);
-
     loader.load(file, gltf => {
         modelLeft = gltf.scene;
         modelLeft.position.set(0, 0, 0);
         scene.add(modelLeft);
+        syncModels();
     });
 }
 
 function loadCompareRight(file) {
     if (modelRight) scene.remove(modelRight);
-
     loader.load(file, gltf => {
         modelRight = gltf.scene;
         modelRight.position.set(0, 0, 0);
         scene.add(modelRight);
+        syncModels();
     });
 }
 
-/* Slider Steuerung */
-let dragging = false;
+/* Synchronisierung der Modelle */
+function syncModels() {
+    if (!modelLeft || !modelRight) return;
 
+    // Erstelle einen "Master" OrbitControls für beide Modelle
+    controls.addEventListener('change', () => {
+        modelRight.rotation.copy(modelLeft.rotation);
+        modelRight.position.copy(modelLeft.position);
+        modelRight.scale.copy(modelLeft.scale);
+    });
+}
+
+/* Slider */
+let dragging = false;
 slider.onmousedown = () => dragging = true;
 document.onmouseup = () => dragging = false;
 document.onmousemove = e => {
     if (!dragging) return;
-
     let x = e.clientX;
     slider.style.left = x + "px";
-
-    let width = window.innerWidth;
-    let maskWidth = width - x;
-    rightMask.style.width = maskWidth + "px";
+    rightMask.style.width = (window.innerWidth - x) + "px";
 };
 
-/* SYNC Bewegung */
+/* Animation */
 function animate() {
     requestAnimationFrame(animate);
-
     controls.update();
-
-    if (modelLeft && modelRight) {
-        modelRight.rotation.copy(modelLeft.rotation);
-        modelRight.position.copy(modelLeft.position);
-        modelRight.scale.copy(modelLeft.scale);
-    }
-
     renderer.render(scene, camera);
 }
 animate();
 
 </script>
-
 </body>
 </html>
