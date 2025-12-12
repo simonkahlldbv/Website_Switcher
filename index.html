@@ -4,133 +4,179 @@
 <meta charset="utf-8" />
 <title>3D Modellvergleich</title>
 
-<!-- model-viewer -->
-<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+<!-- THREE.js + orbit controls -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/examples/js/loaders/GLTFLoader.js"></script>
 
 <style>
-  :root {
-    --sidebar-w: 220px;
-    --accent: #0077ff;
-  }
-  html,body{height:100%;margin:0;font-family:Arial, sans-serif;background:#f6f6f6;}
-
-/* SIDEBAR */
-#sidebar{
-  position:fixed; left:0; top:0; bottom:0;
-  width:var(--sidebar-w); padding:20px; box-sizing:border-box;
-  background:#1e1e1e; color:#fff; overflow:auto; z-index:60;
-}
-#sidebar h2{margin:0 0 12px 0}
-.year-btn{
-  display:block; width:100%; padding:10px; margin:8px 0;
-  background:#333; color:#fff; border:0; border-radius:6px; cursor:pointer;
-  text-align:left; font-size:15px;
-}
-.year-btn:hover{background:#444}
-#compare-btn{
-  margin-top:18px; width:100%; padding:12px; background:var(--accent);
-  color:#fff; border:0; border-radius:8px; cursor:pointer; font-weight:600;
+html, body {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  font-family: Arial, sans-serif;
 }
 
-/* MAIN */
-#main-area{
-  position:fixed; left:var(--sidebar-w); right:0; top:0; bottom:0;
-  display:flex; align-items:center; justify-content:center; background:#eaeaea; z-index:10;
+/* SIDEBAR LEFT */
+#sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 220px;
+  height: 100vh;
+  background: #1e1e1e;
+  color: #fff;
+  padding: 20px;
+  z-index: 20;
+  overflow-y: auto;
 }
-model-viewer#main-model{ width:80%; height:80%; --poster-color:transparent; }
+.year-btn {
+  width: 100%;
+  padding: 10px;
+  margin: 6px 0;
+  background: #333;
+  border: 0;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+.year-btn:hover { background:#444; }
 
-/* COMPARE OVERLAY */
-#compare-overlay{
-  display:none; position:fixed;
-  left:var(--sidebar-w); top:0;
-  width:calc(100vw - var(--sidebar-w)); height:100vh;
-  background:#fff; z-index:200; overflow:hidden;
+#compare-btn {
+  width: 100%;
+  margin-top: 20px;
+  padding: 12px;
+  background: #0077ff;
+  border: 0;
+  border-radius: 8px;
+  color: white;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* MAIN VIEW */
+#main-canvas {
+  position: absolute;
+  left: 220px;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: #eaeaea;
+}
+
+/* COMPARE MODE */
+#compare-wrapper {
+  display: none;
+  position: fixed;
+  left: 220px;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  background: white;
+  z-index: 99;
 }
 
 /* back button */
-#compare-back{
-  position:absolute; top:14px; left:14px; z-index:400;
-  padding:10px 14px; background:#000; color:#fff; border:0; border-radius:6px; cursor:pointer;
+#compare-back {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  padding: 10px 14px;
+  background: black;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 200;
 }
 
-/* side lists */
-.side-list{
-  position:absolute; top:50%; transform:translateY(-50%);
-  display:flex; flex-direction:column; gap:10px; z-index:400; width:140px;
+/* LEFT+RIGHT YEAR LISTS IN COMPARE MODE */
+.side-list {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  z-index: 200;
 }
-#left-list{ left:20px }
-#right-list{ right:20px; text-align:right }
-.side-list button{ padding:8px 10px; background:#222; color:#fff; border:0; border-radius:6px; cursor:pointer }
-.side-list button:hover{ background:#444 }
+#left-list  { left: 20px; }
+#right-list { right: 20px; text-align: right; }
 
-/* compare container: both viewers exactly overlapping */
-#compare-container{ position:absolute; inset:0; overflow:hidden; }
-model-viewer.compare{
-  position:absolute; inset:0; width:100%; height:100%;
-  --poster-color:transparent; pointer-events:auto; touch-action:none;
+.side-list button {
+  padding: 8px 10px;
+  background: #222;
+  border: 0;
+  border-radius: 6px;
+  color: white;
+  cursor: pointer;
+}
+.side-list button:hover { background:#444; }
+
+/* The TWO CANVASES stacked */
+.compare-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 50;
+  display: block;
 }
 
-/* initial clip: left viewer shows left half, right viewer shows right half */
-#viewer-left{ z-index:100; clip-path: inset(0 calc(50%) 0 0); }
-#viewer-right{ z-index:110; clip-path: inset(0 0 0 calc(50%)); }
+/* clipping for left + right half */
+#canvas-left  { clip-path: inset(0 50% 0 0); }
+#canvas-right { clip-path: inset(0 0 0 50%); }
 
 /* vertical slider */
-#slider{
-  position:absolute; top:0; height:100%; width:6px; background:#ff3b3b;
-  left:50%; transform:translateX(-50%); z-index:350; cursor:ew-resize; border-radius:3px;
+#compare-slider {
+  position: absolute;
+  top: 0;
+  width: 6px;
+  height: 100%;
+  background: red;
+  z-index: 150;
+  cursor: ew-resize;
+  left: 50%;
+  transform: translateX(-3px);
+  border-radius: 3px;
 }
-
-/* hide model-viewer default UI parts */
-model-viewer::part(default-controls){ display:none !important; }
 </style>
 </head>
+
 <body>
 
-  <!-- SIDEBAR -->
-  <div id="sidebar">
-    <h2>Modelle</h2>
-    <div id="year-list"></div>
-    <button id="compare-btn">Vergleichen</button>
-  </div>
+<!-- SIDEBAR -->
+<div id="sidebar">
+  <h2>Modelle</h2>
 
-  <!-- MAIN -->
-  <div id="main-area">
-    <model-viewer id="main-model"
-      camera-controls
-      interaction-prompt="none"
-      interaction-prompt-threshold="0"
-      alt="Hauptmodell"></model-viewer>
-  </div>
+  <div id="year-list"></div>
+  <button id="compare-btn">Vergleichen</button>
+</div>
 
-  <!-- COMPARE OVERLAY -->
-  <div id="compare-overlay" aria-hidden="true">
-    <button id="compare-back">← Zurück</button>
+<!-- MAIN VIEW CANVAS -->
+<canvas id="main-canvas"></canvas>
 
-    <div id="left-list" class="side-list"></div>
-    <div id="right-list" class="side-list"></div>
+<!-- COMPARE MODE -->
+<div id="compare-wrapper">
 
-    <div id="compare-container">
-      <model-viewer id="viewer-left" class="compare"
-        camera-controls
-        interaction-prompt="none"
-        interaction-prompt-threshold="0"
-        alt="linkes Modell"></model-viewer>
+  <button id="compare-back">← Zurück</button>
 
-      <model-viewer id="viewer-right" class="compare"
-        camera-controls
-        interaction-prompt="none"
-        interaction-prompt-threshold="0"
-        alt="rechtes Modell"></model-viewer>
-    </div>
+  <div id="left-list"  class="side-list"></div>
+  <div id="right-list" class="side-list"></div>
 
-    <div id="slider" role="separator" aria-orientation="vertical"></div>
-  </div>
+  <canvas id="canvas-left"  class="compare-canvas"></canvas>
+  <canvas id="canvas-right" class="compare-canvas"></canvas>
+
+  <div id="compare-slider"></div>
+</div>
+
 
 <script>
 /* ===========================
-   Konfiguration: Dateinamen
+   MODEL FILENAMES
    =========================== */
-const MODEL_LIST = [
+const MODELS = [
   "1150.glb",
   "1175.glb",
   "1374.glb",
@@ -139,150 +185,202 @@ const MODEL_LIST = [
   "1936.glb"
 ];
 
-/* ---------- Sidebar (Normalmodus) ---------- */
-const yearList = document.getElementById('year-list');
-const mainModel = document.getElementById('main-model');
-
-MODEL_LIST.forEach(fn=>{
-  const label = fn.replace(/\.glb$/i,'');
-  const b = document.createElement('button');
-  b.className = 'year-btn';
-  b.textContent = label;
-  b.onclick = () => { mainModel.src = fn; };
-  yearList.appendChild(b);
+/* ===========================
+   CREATE MODEL BUTTONS
+   =========================== */
+const yearList = document.getElementById("year-list");
+MODELS.forEach(name => {
+  const btn = document.createElement("button");
+  btn.className = "year-btn";
+  btn.textContent = name.replace(".glb", "");
+  btn.onclick = () => loadMainModel(name);
+  yearList.appendChild(btn);
 });
-// show first model immediately
-mainModel.src = MODEL_LIST[0];
 
-/* ---------- Compare UI refs ---------- */
-const compareBtn = document.getElementById('compare-btn');
-const compareOverlay = document.getElementById('compare-overlay');
-const compareBack = document.getElementById('compare-back');
-const leftList = document.getElementById('left-list');
-const rightList = document.getElementById('right-list');
-const viewerLeft = document.getElementById('viewer-left');
-const viewerRight = document.getElementById('viewer-right');
-const slider = document.getElementById('slider');
-const compareContainer = document.getElementById('compare-container');
+/* ===========================
+   MAIN VIEW (single model)
+   =========================== */
 
-let currentPct = 0.5; // slider percent (0..1)
+let mainRenderer, mainScene, mainCamera, mainControls, mainModel;
+initMainView();
+loadMainModel(MODELS[0]); // start with first
 
-/* Build compare lists */
-function buildCompareLists(){
-  leftList.innerHTML = ''; rightList.innerHTML = '';
-  MODEL_LIST.forEach(fn=>{
-    const lbl = fn.replace(/\.glb$/i,'');
-    const bl = document.createElement('button');
-    bl.textContent = lbl;
-    bl.onclick = ()=> viewerLeft.src = fn;
-    leftList.appendChild(bl);
+function initMainView() {
+  const canvas = document.getElementById("main-canvas");
+  mainRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  mainRenderer.setSize(window.innerWidth - 220, window.innerHeight);
 
-    const br = document.createElement('button');
-    br.textContent = lbl;
-    br.onclick = ()=> viewerRight.src = fn;
-    rightList.appendChild(br);
+  mainScene = new THREE.Scene();
+  const light = new THREE.AmbientLight(0xffffff, 1);
+  mainScene.add(light);
+
+  mainCamera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 2000);
+  mainCamera.position.set(0, 150, 300);
+
+  mainControls = new THREE.OrbitControls(mainCamera, canvas);
+  mainControls.enableDamping = true;
+
+  animateMain();
+}
+
+function animateMain() {
+  requestAnimationFrame(animateMain);
+  if (mainControls) mainControls.update();
+  mainRenderer.render(mainScene, mainCamera);
+}
+
+function loadMainModel(filename) {
+  const loader = new THREE.GLTFLoader();
+  loader.load(filename, gltf => {
+    if (mainModel) mainScene.remove(mainModel);
+    mainModel = gltf.scene;
+    mainScene.add(mainModel);
   });
 }
 
-/* open compare */
-compareBtn.addEventListener('click', ()=>{
+/* ===========================
+   COMPARE MODE
+   =========================== */
+
+const compareBtn = document.getElementById("compare-btn");
+const compareWrapper = document.getElementById("compare-wrapper");
+const compareBack = document.getElementById("compare-back");
+
+/* left + right canvases */
+let rendererL, rendererR;
+let sceneL, sceneR;
+let camL, camR;
+let controlsL, controlsR;
+
+let modelLeft, modelRight;
+
+/* build year selector in compare mode */
+function buildCompareLists() {
+  const L = document.getElementById("left-list");
+  const R = document.getElementById("right-list");
+  L.innerHTML = "";
+  R.innerHTML = "";
+
+  MODELS.forEach(file => {
+    const y = file.replace(".glb", "");
+
+    let btnL = document.createElement("button");
+    btnL.textContent = y;
+    btnL.onclick = () => loadLeftModel(file);
+    L.appendChild(btnL);
+
+    let btnR = document.createElement("button");
+    btnR.textContent = y;
+    btnR.onclick = () => loadRightModel(file);
+    R.appendChild(btnR);
+  });
+}
+
+compareBtn.onclick = () => {
+  compareWrapper.style.display = "block";
   buildCompareLists();
-  compareOverlay.style.display = 'block';
-  compareOverlay.setAttribute('aria-hidden','false');
+  initCompareView();
 
-  // default models if empty
-  if(!viewerLeft.src) viewerLeft.src = MODEL_LIST[0];
-  if(!viewerRight.src) viewerRight.src = MODEL_LIST[MODEL_LIST.length-1];
+  loadLeftModel(MODELS[0]);
+  loadRightModel(MODELS[MODELS.length - 1]);
+};
 
-  // center slider
-  requestAnimationFrame(()=> setSliderPercent(0.5));
-});
+compareBack.onclick = () => {
+  compareWrapper.style.display = "none";
+};
 
-/* close compare */
-compareBack.addEventListener('click', ()=>{
-  compareOverlay.style.display = 'none';
-  compareOverlay.setAttribute('aria-hidden','true');
-});
+/* initialize compare renderers */
+function initCompareView() {
+  const cL = document.getElementById("canvas-left");
+  const cR = document.getElementById("canvas-right");
 
-/* -------------------------
-   Slider: drag & touch handling
-   ------------------------- */
+  rendererL = new THREE.WebGLRenderer({ canvas: cL, antialias: true });
+  rendererR = new THREE.WebGLRenderer({ canvas: cR, antialias: true });
+
+  const W = window.innerWidth - 220;
+  const H = window.innerHeight;
+  rendererL.setSize(W, H);
+  rendererR.setSize(W, H);
+
+  sceneL = new THREE.Scene();
+  sceneR = new THREE.Scene();
+
+  const lightL = new THREE.AmbientLight(0xffffff, 1);
+  const lightR = new THREE.AmbientLight(0xffffff, 1);
+  sceneL.add(lightL);
+  sceneR.add(lightR);
+
+  camL = new THREE.PerspectiveCamera(45, W/H, 0.1, 2000);
+  camR = new THREE.PerspectiveCamera(45, W/H, 0.1, 2000);
+  camL.position.set(0,150,300);
+  camR.position.set(0,150,300);
+
+  controlsL = new THREE.OrbitControls(camL, cL);
+  controlsR = new THREE.OrbitControls(camR, cR);
+
+  controlsR.enabled = false; // only LEFT is user-controlled
+
+  animateCompare();
+
+  // SYNC CAMERA
+  controlsL.addEventListener("change", () => {
+    camR.position.copy(camL.position);
+    camR.rotation.copy(camL.rotation);
+    camR.zoom = camL.zoom;
+    camR.updateProjectionMatrix();
+  });
+}
+
+/* load models */
+function loadLeftModel(file) {
+  const loader = new THREE.GLTFLoader();
+  loader.load(file, gltf => {
+    if (modelLeft) sceneL.remove(modelLeft);
+    modelLeft = gltf.scene;
+    sceneL.add(modelLeft);
+  });
+}
+
+function loadRightModel(file) {
+  const loader = new THREE.GLTFLoader();
+  loader.load(file, gltf => {
+    if (modelRight) sceneR.remove(modelRight);
+    modelRight = gltf.scene;
+    sceneR.add(modelRight);
+  });
+}
+
+/* compare animation loop */
+function animateCompare() {
+  requestAnimationFrame(animateCompare);
+  if (controlsL) controlsL.update();
+  rendererL.render(sceneL, camL);
+  rendererR.render(sceneR, camR);
+}
+
+/* ===========================
+   SLIDER CONTROL
+   =========================== */
+const slider = document.getElementById("compare-slider");
 let dragging = false;
 
-slider.addEventListener('mousedown', (e)=> { e.preventDefault(); dragging = true; });
-window.addEventListener('mouseup', ()=> dragging = false);
-window.addEventListener('mouseleave', ()=> dragging = false);
-window.addEventListener('mousemove', (e)=> { if(!dragging) return; updateFromClientX(e.clientX); });
+slider.onmousedown = () => dragging = true;
+window.onmouseup = () => dragging = false;
 
-slider.addEventListener('touchstart', (e)=> { e.preventDefault(); dragging = true; });
-window.addEventListener('touchend', ()=> dragging = false);
-window.addEventListener('touchcancel', ()=> dragging = false);
-window.addEventListener('touchmove', (e)=> { if(!dragging) return; updateFromClientX(e.touches[0].clientX); });
+window.onmousemove = e => {
+  if (!dragging) return;
+  const W = window.innerWidth - 220;
+  const x = Math.min(Math.max(e.clientX - 220, 10), W - 10);
+  slider.style.left = (x + 220) + "px";
 
-function updateFromClientX(clientX){
-  const rect = compareContainer.getBoundingClientRect();
-  const leftBound = rect.left + 6;
-  const rightBound = rect.right - 6;
-  const clamped = Math.min(Math.max(clientX, leftBound), rightBound);
-  const x = clamped - rect.left;
-  const pct = rect.width ? (x/rect.width) : 0.5;
-  setSliderPercent(pct);
-}
+  const pct = x / W;
 
-function setSliderPercent(pct){
-  pct = Math.max(0.01, Math.min(0.99, pct));
-  currentPct = pct;
-  const rect = compareContainer.getBoundingClientRect();
-  const x = pct * rect.width;
-  // Position slider relative to overlay (use page coords for left)
-  const overlayRect = compareOverlay.getBoundingClientRect();
-  slider.style.left = (overlayRect.left + x) + 'px';
-  // Set clip-paths on viewers using px values relative to container width
-  viewerLeft.style.clipPath = `inset(0 ${Math.round(rect.width - x)}px 0 0)`;
-  viewerRight.style.clipPath = `inset(0 0 0 ${Math.round(x)}px)`;
-}
+  const canvasL = document.getElementById("canvas-left");
+  const canvasR = document.getElementById("canvas-right");
 
-/* keep slider position on resize */
-window.addEventListener('resize', ()=>{
-  setTimeout(()=> setSliderPercent(currentPct), 10);
-});
-
-/* -------------------------
-   Camera sync (bidirectional, stable)
-   ------------------------- */
-let syncing = false;
-function copyCamera(source, target){
-  if(syncing) return;
-  syncing = true;
-  try {
-    // copy cameraOrbit, cameraTarget and fieldOfView if available
-    if(source.cameraOrbit) target.cameraOrbit = source.cameraOrbit;
-    if(source.cameraTarget) target.cameraTarget = source.cameraTarget;
-    if(typeof source.fieldOfView !== 'undefined') target.fieldOfView = source.fieldOfView;
-  } catch(e){}
-  // small timeout to break potential event loops
-  setTimeout(()=> syncing = false, 0);
-}
-
-// listen to camera-change from both viewers
-viewerLeft.addEventListener('camera-change', ()=> copyCamera(viewerLeft, viewerRight));
-viewerRight.addEventListener('camera-change', ()=> copyCamera(viewerRight, viewerLeft));
-
-/* Ensure viewers start still (avoid preview motion) by setting an initial orbit after load */
-function setInitial(viewer){
-  try {
-    const initial = '0deg 75deg 2.5m';
-    viewer.cameraOrbit = initial;
-    viewer.cameraTarget = '0m 0m 0m';
-  } catch(e){}
-}
-viewerLeft.addEventListener('load', ()=> setInitial(viewerLeft));
-viewerRight.addEventListener('load', ()=> setInitial(viewerRight));
-
-/* Optional: ESC closes overlay */
-window.addEventListener('keydown', (e)=>{
-  if(e.key === 'Escape' && compareOverlay.style.display === 'block') compareOverlay.style.display = 'none';
-});
+  canvasL.style.clipPath = `inset(0 ${(1-pct)*100}% 0 0)`;
+  canvasR.style.clipPath = `inset(0 0 0 ${pct*100}%)`;
+};
 </script>
 
 </body>
