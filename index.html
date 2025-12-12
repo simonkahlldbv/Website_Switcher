@@ -6,20 +6,20 @@
 <title>3D Stadtmodelle Vergleich</title>
 
 <style>
-    body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; background: white; }
-    #sidebar { position: fixed; top: 0; left: 0; width: 220px; height: 100vh; background: #1e1e1e; padding: 20px; color: white; z-index: 10; }
-    h2 { margin-top: 0; }
-    .year-btn, .compare-btn { width: 100%; padding: 10px; margin-bottom: 10px; border: none; border-radius: 5px; cursor: pointer; text-align: left; color: white; background: #333; }
-    .year-btn:hover, .compare-btn:hover { background: #444; }
-    #compareBtn { width: 100%; margin-top: 15px; padding: 10px; border: none; background: #007bff; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
-    #compareBtn:hover { background: #005ce6; }
-    #viewContainer { position: fixed; top: 0; left: 220px; width: calc(100vw - 220px); height: 100vh; background: white; }
-    #backBtn { position: fixed; top: 15px; left: 15px; z-index: 20; padding: 10px 15px; background: black; color: white; border-radius: 5px; cursor: pointer; display: none; }
-    #compareLeft, #compareRight { position: fixed; width: 200px; top: 100px; z-index: 20; display: none; }
-    #compareLeft { left: 20px; }
-    #compareRight { right: 20px; }
-    #slider { position: fixed; top: 0; left: 50%; width: 6px; height: 100%; background: red; cursor: ew-resize; display: none; z-index: 15; }
-    #rightMask { position: fixed; top: 0; right: 0; height: 100vh; background: white; pointer-events: none; display: none; }
+body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; background: white; }
+#sidebar { position: fixed; top: 0; left: 0; width: 220px; height: 100vh; background: #1e1e1e; padding: 20px; color: white; z-index: 10; }
+h2 { margin-top: 0; }
+.year-btn, .compare-btn { width: 100%; padding: 10px; margin-bottom: 10px; border: none; border-radius: 5px; cursor: pointer; text-align: left; color: white; background: #333; }
+.year-btn:hover, .compare-btn:hover { background: #444; }
+#compareBtn { width: 100%; margin-top: 15px; padding: 10px; border: none; background: #007bff; color: white; border-radius: 5px; cursor: pointer; font-weight: bold; }
+#compareBtn:hover { background: #005ce6; }
+#viewContainer { position: fixed; top: 0; left: 220px; width: calc(100vw - 220px); height: 100vh; background: white; }
+#backBtn { position: fixed; top: 15px; left: 15px; z-index: 20; padding: 10px 15px; background: black; color: white; border-radius: 5px; cursor: pointer; display: none; }
+#compareLeft, #compareRight { position: fixed; width: 200px; top: 100px; z-index: 20; display: none; }
+#compareLeft { left: 20px; }
+#compareRight { right: 20px; }
+#slider { position: fixed; top: 0; left: 50%; width: 6px; height: 100%; background: red; cursor: ew-resize; display: none; z-index: 15; }
+#rightMask { position: fixed; top: 0; right: 0; height: 100vh; background: white; pointer-events: none; display: none; }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152/build/three.min.js"></script>
@@ -31,12 +31,12 @@
 
 <div id="sidebar">
     <h2>Modelle</h2>
-    <button class="year-btn" onclick="loadSingleModel('1150.glb')">1150</button>
-    <button class="year-btn" onclick="loadSingleModel('1175.glb')">1175</button>
-    <button class="year-btn" onclick="loadSingleModel('1374.glb')">1374</button>
-    <button class="year-btn" onclick="loadSingleModel('1550.glb')">1550</button>
-    <button class="year-btn" onclick="loadSingleModel('1630.glb')">1630</button>
-    <button class="year-btn" onclick="loadSingleModel('1936.glb')">1936</button>
+    <button class="year-btn" onclick="loadSingleModel('./1150.glb')">1150</button>
+    <button class="year-btn" onclick="loadSingleModel('./1175.glb')">1175</button>
+    <button class="year-btn" onclick="loadSingleModel('./1374.glb')">1374</button>
+    <button class="year-btn" onclick="loadSingleModel('./1550.glb')">1550</button>
+    <button class="year-btn" onclick="loadSingleModel('./1630.glb')">1630</button>
+    <button class="year-btn" onclick="loadSingleModel('./1936.glb')">1936</button>
     <button id="compareBtn" onclick="enterCompareMode()">Vergleichen</button>
 </div>
 
@@ -44,21 +44,21 @@
 <div id="backBtn" onclick="exitCompareMode()">← Zurück</div>
 
 <div id="compareLeft">
-    <button class="compare-btn" onclick="loadCompareLeft('1150.glb')">1150</button>
-    <button class="compare-btn" onclick="loadCompareLeft('1175.glb')">1175</button>
-    <button class="compare-btn" onclick="loadCompareLeft('1374.glb')">1374</button>
-    <button class="compare-btn" onclick="loadCompareLeft('1550.glb')">1550</button>
-    <button class="compare-btn" onclick="loadCompareLeft('1630.glb')">1630</button>
-    <button class="compare-btn" onclick="loadCompareLeft('1936.glb')">1936</button>
+    <button class="compare-btn" onclick="loadCompareLeft('./1150.glb')">1150</button>
+    <button class="compare-btn" onclick="loadCompareLeft('./1175.glb')">1175</button>
+    <button class="compare-btn" onclick="loadCompareLeft('./1374.glb')">1374</button>
+    <button class="compare-btn" onclick="loadCompareLeft('./1550.glb')">1550</button>
+    <button class="compare-btn" onclick="loadCompareLeft('./1630.glb')">1630</button>
+    <button class="compare-btn" onclick="loadCompareLeft('./1936.glb')">1936</button>
 </div>
 
 <div id="compareRight">
-    <button class="compare-btn" onclick="loadCompareRight('1150.glb')">1150</button>
-    <button class="compare-btn" onclick="loadCompareRight('1175.glb')">1175</button>
-    <button class="compare-btn" onclick="loadCompareRight('1374.glb')">1374</button>
-    <button class="compare-btn" onclick="loadCompareRight('1550.glb')">1550</button>
-    <button class="compare-btn" onclick="loadCompareRight('1630.glb')">1630</button>
-    <button class="compare-btn" onclick="loadCompareRight('1936.glb')">1936</button>
+    <button class="compare-btn" onclick="loadCompareRight('./1150.glb')">1150</button>
+    <button class="compare-btn" onclick="loadCompareRight('./1175.glb')">1175</button>
+    <button class="compare-btn" onclick="loadCompareRight('./1374.glb')">1374</button>
+    <button class="compare-btn" onclick="loadCompareRight('./1550.glb')">1550</button>
+    <button class="compare-btn" onclick="loadCompareRight('./1630.glb')">1630</button>
+    <button class="compare-btn" onclick="loadCompareRight('./1936.glb')">1936</button>
 </div>
 
 <div id="slider"></div>
@@ -66,7 +66,7 @@
 
 <script>
 let scene = new THREE.Scene();
-let camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+let camera = new THREE.PerspectiveCamera(45, (window.innerWidth-220)/window.innerHeight, 0.1, 2000);
 camera.position.set(0, 250, 350);
 
 let renderer = new THREE.WebGLRenderer({ antialias: true });
@@ -79,17 +79,15 @@ controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 controls.rotateSpeed = 0.6;
 controls.zoomSpeed = 0.8;
-controls.panSpeed = 0.8;
 controls.enablePan = false;
 
 let loader = new THREE.GLTFLoader();
-
 let modelSingle = null;
 let modelLeft = null;
 let modelRight = null;
 
 function clearScene() {
-    while (scene.children.length > 0) scene.remove(scene.children[0]);
+    while(scene.children.length) scene.remove(scene.children[0]);
 }
 
 function loadSingleModel(file) {
@@ -97,7 +95,7 @@ function loadSingleModel(file) {
     clearScene();
     loader.load(file, gltf => {
         modelSingle = gltf.scene;
-        modelSingle.position.set(0, 0, 0);
+        modelSingle.position.set(0,0,0);
         scene.add(modelSingle);
     });
 }
@@ -124,56 +122,51 @@ function exitCompareMode() {
 }
 
 function loadCompareLeft(file) {
-    if (modelLeft) scene.remove(modelLeft);
-    loader.load(file, gltf => {
+    if(modelLeft) scene.remove(modelLeft);
+    loader.load(file, gltf=>{
         modelLeft = gltf.scene;
-        modelLeft.position.set(0, 0, 0);
+        modelLeft.position.set(0,0,0);
         scene.add(modelLeft);
-        syncModels();
+        applyRightMask();
     });
 }
 
 function loadCompareRight(file) {
-    if (modelRight) scene.remove(modelRight);
-    loader.load(file, gltf => {
+    if(modelRight) scene.remove(modelRight);
+    loader.load(file, gltf=>{
         modelRight = gltf.scene;
-        modelRight.position.set(0, 0, 0);
+        modelRight.position.set(0,0,0);
         scene.add(modelRight);
-        syncModels();
+        applyRightMask();
     });
 }
 
-/* Synchronisierung der Modelle */
-function syncModels() {
-    if (!modelLeft || !modelRight) return;
-
-    // Erstelle einen "Master" OrbitControls für beide Modelle
-    controls.addEventListener('change', () => {
-        modelRight.rotation.copy(modelLeft.rotation);
-        modelRight.position.copy(modelLeft.position);
-        modelRight.scale.copy(modelLeft.scale);
-    });
-}
-
-/* Slider */
+/* Masken-Logik für den Slider */
 let dragging = false;
-slider.onmousedown = () => dragging = true;
-document.onmouseup = () => dragging = false;
-document.onmousemove = e => {
-    if (!dragging) return;
+slider.onmousedown = ()=>dragging=true;
+document.onmouseup = ()=>dragging=false;
+document.onmousemove = e=>{
+    if(!dragging) return;
     let x = e.clientX;
-    slider.style.left = x + "px";
-    rightMask.style.width = (window.innerWidth - x) + "px";
+    slider.style.left = x+"px";
+    rightMask.style.width = (window.innerWidth - x)+"px";
 };
 
+function applyRightMask(){
+    if(modelRight){
+        rightMask.style.display = 'block';
+        rightMask.style.width = '50vw';
+    }
+}
+
 /* Animation */
-function animate() {
+function animate(){
     requestAnimationFrame(animate);
     controls.update();
     renderer.render(scene, camera);
 }
 animate();
-
 </script>
+
 </body>
 </html>
