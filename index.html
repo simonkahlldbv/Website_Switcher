@@ -1,377 +1,299 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="utf-8" />
-<title>3D Modellvergleich</title>
-
-<!-- THREE.js + orbit controls -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/examples/js/controls/OrbitControls.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/examples/js/loaders/GLTFLoader.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Stadtmodelle</title>
 
 <style>
-html, body {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  font-family: Arial, sans-serif;
-}
+    body {
+        margin: 0;
+        overflow: hidden;
+        font-family: Arial, sans-serif;
+        background: white;
+    }
 
-/* SIDEBAR LEFT */
-#sidebar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 220px;
-  height: 100vh;
-  background: #1e1e1e;
-  color: #fff;
-  padding: 20px;
-  z-index: 100; /* UI always on top */
-  overflow-y: auto;
-}
-.year-btn {
-  width: 100%;
-  padding: 10px;
-  margin: 6px 0;
-  background: #333;
-  border: 0;
-  border-radius: 6px;
-  color: #fff;
-  cursor: pointer;
-  text-align: left;
-}
-.year-btn:hover { background:#444; }
+    /* Sidebar */
+    #sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 220px;
+        height: 100vh;
+        background: #1e1e1e;
+        padding: 20px;
+        color: white;
+        z-index: 10;
+    }
 
-#compare-btn {
-  width: 100%;
-  margin-top: 20px;
-  padding: 12px;
-  background: #0077ff;
-  border: 0;
-  border-radius: 8px;
-  color: white;
-  cursor: pointer;
-  font-weight: bold;
-}
+    h2 { margin-top: 0; }
 
-/* MAIN VIEW */
-#main-canvas {
-  position: absolute;
-  left: 220px;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  background: #eaeaea;
-  z-index: 1;
-}
+    .year-btn {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 10px;
+        border: none;
+        background: #333;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        text-align: left;
+    }
+    .year-btn:hover { background: #444; }
 
-/* COMPARE MODE */
-#compare-wrapper {
-  display: none;
-  position: fixed;
-  left: 220px;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  background: white;
-  z-index: 50;
-}
+    #compareBtn {
+        width: 100%;
+        margin-top: 15px;
+        padding: 10px;
+        border: none;
+        background: #007bff;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+    }
+    #compareBtn:hover { background: #005ce6; }
 
-/* BACK BUTTON */
-#compare-back {
-  position: absolute;
-  top: 15px;
-  left: 15px;
-  padding: 10px 14px;
-  background: black;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  z-index: 200; /* above canvases */
-}
+    /* Canvas Bereich */
+    #viewContainer {
+        position: fixed;
+        top: 0;
+        left: 220px;
+        width: calc(100vw - 220px);
+        height: 100vh;
+        background: white;
+    }
 
-/* YEAR SELECTORS LEFT + RIGHT */
-.side-list {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  z-index: 200; /* above canvases */
-}
-#left-list  { left: 20px; }
-#right-list { right: 20px; text-align: right; }
+    /* Vergleichsmodus */
+    #backBtn {
+        position: fixed;
+        top: 15px;
+        left: 15px;
+        z-index: 20;
+        padding: 10px 15px;
+        background: black;
+        color: white;
+        border-radius: 5px;
+        cursor: pointer;
+        display: none;
+    }
 
-.side-list button {
-  padding: 8px 10px;
-  background: #222;
-  border: 0;
-  border-radius: 6px;
-  color: white;
-  cursor: pointer;
-}
-.side-list button:hover { background:#444; }
+    #compareLeft, #compareRight {
+        position: fixed;
+        width: 200px;
+        top: 100px;
+        z-index: 20;
+        display: none;
+    }
+    #compareLeft { left: 20px; }
+    #compareRight { right: 20px; }
 
-/* TWO CANVASES stacked */
-.compare-canvas {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  z-index: 50; /* behind slider + UI */
-}
+    .compare-btn {
+        width: 100%;
+        padding: 10px;
+        background: #222;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        cursor: pointer;
+    }
+    .compare-btn:hover { background: #333; }
 
-#canvas-left  { clip-path: inset(0 50% 0 0); }
-#canvas-right { clip-path: inset(0 0 0 50%); }
+    /* Slider */
+    #slider {
+        position: fixed;
+        top: 0;
+        left: 50%;
+        width: 6px;
+        height: 100%;
+        background: red;
+        cursor: ew-resize;
+        display: none;
+        z-index: 15;
+    }
 
-/* SLIDER */
-#compare-slider {
-  position: absolute;
-  top: 0;
-  width: 6px;
-  height: 100%;
-  background: red;
-  z-index: 150; /* above canvas but below side lists */
-  cursor: ew-resize;
-  left: 50%;
-  transform: translateX(-3px);
-  border-radius: 3px;
-}
+    #rightMask {
+        position: fixed;
+        top: 0;
+        right: 0;
+        height: 100vh;
+        background: white;
+        pointer-events: none;
+        display: none;
+    }
 </style>
-</head>
 
+<script src="https://cdn.jsdelivr.net/npm/three@0.152/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152/examples/js/controls/OrbitControls.js"></script>
+
+</head>
 <body>
 
-<!-- SIDEBAR -->
 <div id="sidebar">
-  <h2>Modelle</h2>
-  <div id="year-list"></div>
-  <button id="compare-btn">Vergleichen</button>
+    <h2>Modelle</h2>
+
+    <button class="year-btn" onclick="loadSingleModel('1150.glb')">1150</button>
+    <button class="year-btn" onclick="loadSingleModel('1175.glb')">1175</button>
+    <button class="year-btn" onclick="loadSingleModel('1374.glb')">1374</button>
+    <button class="year-btn" onclick="loadSingleModel('1550.glb')">1550</button>
+    <button class="year-btn" onclick="loadSingleModel('1630.glb')">1630</button>
+    <button class="year-btn" onclick="loadSingleModel('1936.glb')">1936</button>
+
+    <button id="compareBtn" onclick="enterCompareMode()">Vergleichen</button>
 </div>
 
-<!-- MAIN VIEW CANVAS -->
-<canvas id="main-canvas"></canvas>
+<div id="viewContainer"></div>
 
-<!-- COMPARE MODE -->
-<div id="compare-wrapper">
+<div id="backBtn" onclick="exitCompareMode()">← Zurück</div>
 
-  <button id="compare-back">← Zurück</button>
-
-  <div id="left-list"  class="side-list"></div>
-  <div id="right-list" class="side-list"></div>
-
-  <canvas id="canvas-left"  class="compare-canvas"></canvas>
-  <canvas id="canvas-right" class="compare-canvas"></canvas>
-
-  <div id="compare-slider"></div>
+<div id="compareLeft">
+    <button class="compare-btn" onclick="loadCompareLeft('1150.glb')">1150</button>
+    <button class="compare-btn" onclick="loadCompareLeft('1175.glb')">1175</button>
+    <button class="compare-btn" onclick="loadCompareLeft('1374.glb')">1374</button>
+    <button class="compare-btn" onclick="loadCompareLeft('1550.glb')">1550</button>
+    <button class="compare-btn" onclick="loadCompareLeft('1630.glb')">1630</button>
+    <button class="compare-btn" onclick="loadCompareLeft('1936.glb')">1936</button>
 </div>
 
+<div id="compareRight">
+    <button class="compare-btn" onclick="loadCompareRight('1150.glb')">1150</button>
+    <button class="compare-btn" onclick="loadCompareRight('1175.glb')">1175</button>
+    <button class="compare-btn" onclick="loadCompareRight('1374.glb')">1374</button>
+    <button class="compare-btn" onclick="loadCompareRight('1550.glb')">1550</button>
+    <button class="compare-btn" onclick="loadCompareRight('1630.glb')">1630</button>
+    <button class="compare-btn" onclick="loadCompareRight('1936.glb')">1936</button>
+</div>
+
+<div id="slider"></div>
+<div id="rightMask"></div>
 
 <script>
-/* ===========================
-   MODEL FILENAMES
-   =========================== */
-const MODELS = [
-  "1150.glb",
-  "1175.glb",
-  "1374.glb",
-  "1550.glb",
-  "1630.glb",
-  "1936.glb"
-];
+/* Grundsetup */
+let scene = new THREE.Scene();
+let camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 2000);
+camera.position.set(0, 250, 350);
 
-/* ===========================
-   CREATE YEAR BUTTONS
-   =========================== */
-const yearList = document.getElementById("year-list");
-MODELS.forEach(name => {
-  const btn = document.createElement("button");
-  btn.className = "year-btn";
-  btn.textContent = name.replace(".glb", "");
-  btn.onclick = () => loadMainModel(name);
-  yearList.appendChild(btn);
-});
+let renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth - 220, window.innerHeight);
+renderer.setClearColor(0xffffff, 1);
+document.getElementById("viewContainer").appendChild(renderer.domElement);
 
-/* ===========================
-   MAIN VIEW
-   =========================== */
-let mainRenderer, mainScene, mainCamera, mainControls, mainModel;
-initMainView();
-loadMainModel(MODELS[0]); // show first model initially
+let controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.05;
+controls.rotateSpeed = 0.6;
+controls.zoomSpeed = 0.8;
+controls.panSpeed = 0.8;
+controls.enablePan = false;
 
-function initMainView() {
-  const canvas = document.getElementById("main-canvas");
-  mainRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  resizeMain();
+/* Beide Scenes übereinander */
+let rightMask = document.getElementById("rightMask");
+let slider = document.getElementById("slider");
 
-  mainScene = new THREE.Scene();
-  mainScene.add(new THREE.AmbientLight(0xffffff, 1));
+let loader = new THREE.GLTFLoader();
 
-  mainCamera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 2000);
-  mainCamera.position.set(0,150,300);
+let modelSingle;
 
-  mainControls = new THREE.OrbitControls(mainCamera, canvas);
-  mainControls.enableDamping = true;
+let modelLeft = null;
+let modelRight = null;
 
-  animateMain();
+function clearScene() {
+    while (scene.children.length > 0) {
+        scene.remove(scene.children[0]);
+    }
 }
 
-function resizeMain() {
-  mainRenderer.setSize(window.innerWidth - 220, window.innerHeight);
+function loadSingleModel(file) {
+    exitCompareMode();
+    clearScene();
+
+    loader.load(file, gltf => {
+        modelSingle = gltf.scene;
+        modelSingle.position.set(0, 0, 0);
+        scene.add(modelSingle);
+    });
 }
 
-function animateMain() {
-  requestAnimationFrame(animateMain);
-  mainControls.update();
-  mainRenderer.render(mainScene, mainCamera);
+/* Vergleich */
+function enterCompareMode() {
+    document.getElementById("sidebar").style.display = "none";
+    document.getElementById("backBtn").style.display = "block";
+    document.getElementById("compareLeft").style.display = "block";
+    document.getElementById("compareRight").style.display = "block";
+    slider.style.display = "block";
+    rightMask.style.display = "block";
+
+    rightMask.style.width = "50vw";
+
+    clearScene();
 }
 
-function loadMainModel(file) {
-  const loader = new THREE.GLTFLoader();
-  loader.load(file, gltf => {
-    if (mainModel) mainScene.remove(mainModel);
-    mainModel = gltf.scene;
-    mainScene.add(mainModel);
-  });
+function exitCompareMode() {
+    document.getElementById("sidebar").style.display = "block";
+    document.getElementById("backBtn").style.display = "none";
+    document.getElementById("compareLeft").style.display = "none";
+    document.getElementById("compareRight").style.display = "none";
+    slider.style.display = "none";
+    rightMask.style.display = "none";
+
+    clearScene();
 }
 
-/* ===========================
-   COMPARE MODE
-   =========================== */
-const compareBtn = document.getElementById("compare-btn");
-const compareWrapper = document.getElementById("compare-wrapper");
-const compareBack = document.getElementById("compare-back");
+/* Modelle laden */
+function loadCompareLeft(file) {
+    if (modelLeft) scene.remove(modelLeft);
 
-let rendererL, rendererR;
-let sceneL, sceneR;
-let camL, camR;
-let controlsL, controlsR;
-let modelLeft, modelRight;
-
-compareBtn.onclick = () => {
-  compareWrapper.style.display = "block";
-  buildCompareLists();
-  initCompareView();
-  loadLeftModel(MODELS[0]);
-  loadRightModel(MODELS[MODELS.length - 1]);
-};
-
-compareBack.onclick = () => {
-  compareWrapper.style.display = "none";
-};
-
-function buildCompareLists() {
-  const L = document.getElementById("left-list");
-  const R = document.getElementById("right-list");
-  L.innerHTML = "";
-  R.innerHTML = "";
-
-  MODELS.forEach(file => {
-    const y = file.replace(".glb", "");
-
-    const btnL = document.createElement("button");
-    btnL.textContent = y;
-    btnL.onclick = () => loadLeftModel(file);
-    L.appendChild(btnL);
-
-    const btnR = document.createElement("button");
-    btnR.textContent = y;
-    btnR.onclick = () => loadRightModel(file);
-    R.appendChild(btnR);
-  });
+    loader.load(file, gltf => {
+        modelLeft = gltf.scene;
+        modelLeft.position.set(0, 0, 0);
+        scene.add(modelLeft);
+    });
 }
 
-function initCompareView() {
-  const cL = document.getElementById("canvas-left");
-  const cR = document.getElementById("canvas-right");
+function loadCompareRight(file) {
+    if (modelRight) scene.remove(modelRight);
 
-  rendererL = new THREE.WebGLRenderer({ canvas: cL, antialias: true });
-  rendererR = new THREE.WebGLRenderer({ canvas: cR, antialias: true });
-
-  const W = window.innerWidth - 220;
-  const H = window.innerHeight;
-
-  rendererL.setSize(W, H);
-  rendererR.setSize(W, H);
-
-  sceneL = new THREE.Scene();
-  sceneR = new THREE.Scene();
-
-  sceneL.add(new THREE.AmbientLight(0xffffff, 1));
-  sceneR.add(new THREE.AmbientLight(0xffffff, 1));
-
-  camL = new THREE.PerspectiveCamera(45, W/H, 0.1, 2000);
-  camR = new THREE.PerspectiveCamera(45, W/H, 0.1, 2000);
-  camL.position.set(0,150,300);
-  camR.position.set(0,150,300);
-
-  controlsL = new THREE.OrbitControls(camL, cL);
-  controlsR = new THREE.OrbitControls(camR, cR);
-  controlsR.enabled = false;
-
-  controlsL.addEventListener("change", () => {
-    camR.position.copy(camL.position);
-    camR.rotation.copy(camL.rotation);
-    camR.zoom = camL.zoom;
-    camR.updateProjectionMatrix();
-  });
-
-  animateCompare();
+    loader.load(file, gltf => {
+        modelRight = gltf.scene;
+        modelRight.position.set(0, 0, 0);
+        scene.add(modelRight);
+    });
 }
 
-function loadLeftModel(file) {
-  const loader = new THREE.GLTFLoader();
-  loader.load(file, gltf => {
-    if (modelLeft) sceneL.remove(modelLeft);
-    modelLeft = gltf.scene;
-    sceneL.add(modelLeft);
-  });
-}
-
-function loadRightModel(file) {
-  const loader = new THREE.GLTFLoader();
-  loader.load(file, gltf => {
-    if (modelRight) sceneR.remove(modelRight);
-    modelRight = gltf.scene;
-    sceneR.add(modelRight);
-  });
-}
-
-function animateCompare() {
-  requestAnimationFrame(animateCompare);
-  controlsL.update();
-  rendererL.render(sceneL, camL);
-  rendererR.render(sceneR, camR);
-}
-
-/* ===========================
-   SLIDER
-   =========================== */
-const slider = document.getElementById("compare-slider");
+/* Slider Steuerung */
 let dragging = false;
 
 slider.onmousedown = () => dragging = true;
-window.onmouseup = () => dragging = false;
+document.onmouseup = () => dragging = false;
+document.onmousemove = e => {
+    if (!dragging) return;
 
-window.onmousemove = e => {
-  if (!dragging) return;
-  const W = window.innerWidth - 220;
-  let x = e.clientX - 220;
-  x = Math.max(10, Math.min(W-10, x));
+    let x = e.clientX;
+    slider.style.left = x + "px";
 
-  slider.style.left = (x + 220) + "px";
-
-  const pct = x / W;
-
-  const left = document.getElementById("canvas-left");
-  const right = document.getElementById("canvas-right");
-
-  left.style.clipPath = `inset(0 ${(1-pct)*100}% 0 0)`;
-  right.style.clipPath = `inset(0 0 0 ${pct*100}%)`;
+    let width = window.innerWidth;
+    let maskWidth = width - x;
+    rightMask.style.width = maskWidth + "px";
 };
+
+/* SYNC Bewegung */
+function animate() {
+    requestAnimationFrame(animate);
+
+    controls.update();
+
+    if (modelLeft && modelRight) {
+        modelRight.rotation.copy(modelLeft.rotation);
+        modelRight.position.copy(modelLeft.position);
+        modelRight.scale.copy(modelLeft.scale);
+    }
+
+    renderer.render(scene, camera);
+}
+animate();
+
 </script>
 
 </body>
