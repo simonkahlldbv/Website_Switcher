@@ -2,231 +2,290 @@
 <html lang="de">
 <head>
     <meta charset="UTF-8">
-    <title>3D Model Viewer & Compare</title>
+    <title>Modell Vergleich</title>
     <style>
         body {
             margin: 0;
             overflow: hidden;
-            background: #111;
+            font-family: Arial, sans-serif;
+        }
+
+        /* --- Seitenleiste zur Modellauswahl --- */
+        #sidebar {
+            width: 240px;
+            height: 100%;
+            background: #1e1e1e;
             color: white;
-            font-family: sans-serif;
+            padding: 20px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            z-index: 10;
         }
 
-        #ui {
-            position: fixed;
-            top: 10px;
-            left: 10px;
+        #sidebar button {
+            width: 200px;
+            margin-bottom: 10px;
+            padding: 10px;
+            background: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+
+        #sidebar button:hover {
+            background: #444;
+        }
+
+        #compareBtn {
+            background: #007bff;
+        }
+
+        /* --- Zurück-Button --- */
+        #backBtn {
+            position: absolute;
+            top: 20px;
+            left: 20px;
             z-index: 20;
+            padding: 10px;
+            background: black;
+            color: white;
+            border: none;
+            cursor: pointer;
         }
 
-        button {
-            padding: 8px 12px;
-            margin: 4px;
-            font-size: 14px;
-        }
-
-        #compareWrapper {
+        /* --- Slider --- */
+        #sliderLine {
             position: absolute;
             top: 0;
-            left: 0;
+            bottom: 0;
+            width: 4px;
+            background: red;
+            left: 50%;
+            z-index: 5;
+            cursor: ew-resize;
+        }
+
+        #comparisonContainer {
             width: 100vw;
             height: 100vh;
-            pointer-events: none;
+            position: relative;
+            display: none;
         }
 
         #leftView, #rightView {
             position: absolute;
             top: 0;
-            left: 0;
-            width: 100%;
             height: 100%;
-            pointer-events: none;
-        }
-
-        #rightView {
+            width: 100%;
             overflow: hidden;
         }
 
-        #slider {
-            position: fixed;
-            top: 0;
-            left: 50%;
-            width: 5px;
-            height: 100%;
-            background: white;
-            cursor: ew-resize;
-            z-index: 30;
+        #leftView {
+            clip-path: inset(0 50% 0 0);
+        }
+
+        #rightView {
+            clip-path: inset(0 0 0 50%);
+        }
+
+        /* Buttons rechts im Vergleich */
+        .yearButtonsRight {
+            position: absolute;
+            right: 20px;
+            top: 120px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 12;
+        }
+
+        /* Buttons links im Vergleich */
+        .yearButtonsLeft {
+            position: absolute;
+            left: 20px;
+            top: 120px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 12;
+        }
+
+        .yearBtn {
+            padding: 8px 14px;
+            background: #222;
+            color: white;
+            border: 1px solid #444;
+            cursor: pointer;
+            border-radius: 4px;
+        }
+        .yearBtn:hover {
+            background: #444;
         }
     </style>
 </head>
-
 <body>
 
-<div id="ui">
-    <button onclick="loadSingle('1150.glb')">1150</button>
-    <button onclick="loadSingle('1200.glb')">1200</button>
-    <button onclick="loadSingle('1250.glb')">1250</button>
+<!-- Seitenleiste -->
+<div id="sidebar">
+    <h3>Modelle</h3>
+    <button class="modelSelect" data-year="1150">1150</button>
+    <button class="modelSelect" data-year="1175">1175</button>
+    <button class="modelSelect" data-year="1374">1374</button>
+    <button class="modelSelect" data-year="1550">1550</button>
+    <button class="modelSelect" data-year="1630">1630</button>
+    <button class="modelSelect" data-year="1936">1936</button>
 
     <br><br>
-
-    <button onclick="startCompare('1150.glb','1250.glb')">1150 ↔ 1250</button>
-    <button onclick="startCompare('1150.glb','1200.glb')">1150 ↔ 1200</button>
+    <button id="compareBtn">Vergleichen</button>
 </div>
 
-<div id="compareWrapper" style="display:none;">
+<!-- Vergleichsansicht -->
+<div id="comparisonContainer">
+
+    <button id="backBtn">← Zurück</button>
+
+    <div class="yearButtonsLeft">
+        <button class="yearBtn leftYear" data-year="1150">1150</button>
+        <button class="yearBtn leftYear" data-year="1175">1175</button>
+        <button class="yearBtn leftYear" data-year="1374">1374</button>
+        <button class="yearBtn leftYear" data-year="1550">1550</button>
+        <button class="yearBtn leftYear" data-year="1630">1630</button>
+        <button class="yearBtn leftYear" data-year="1936">1936</button>
+    </div>
+
+    <div class="yearButtonsRight">
+        <button class="yearBtn rightYear" data-year="1150">1150</button>
+        <button class="yearBtn rightYear" data-year="1175">1175</button>
+        <button class="yearBtn rightYear" data-year="1374">1374</button>
+        <button class="yearBtn rightYear" data-year="1550">1550</button>
+        <button class="yearBtn rightYear" data-year="1630">1630</button>
+        <button class="yearBtn rightYear" data-year="1936">1936</button>
+    </div>
+
+    <div id="sliderLine"></div>
+
     <div id="leftView"></div>
     <div id="rightView"></div>
-    <div id="slider"></div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/loaders/GLTFLoader.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/examples/js/controls/OrbitControls.js"></script>
+<!-- Three.js -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.157/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.157/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.157/examples/js/controls/OrbitControls.js"></script>
 
 <script>
-/* ================================
-   GLOBAL VARS
-================================ */
-let scene, camera, controls, rendererSingle;
-let rendererLeft, rendererRight;
+/* ========= BASIS ========= */
 
+let selectedYear = "1150";
+
+/* Auswahl im Menü */
+document.querySelectorAll(".modelSelect").forEach(btn => {
+    btn.onclick = () => {
+        selectedYear = btn.dataset.year;
+    };
+});
+
+/* Vergleichsmodus starten */
+document.getElementById("compareBtn").onclick = () => {
+    document.getElementById("sidebar").style.display = "none";
+    document.getElementById("comparisonContainer").style.display = "block";
+    loadLeftModel(selectedYear);
+    loadRightModel("1936"); // Standard rechts
+};
+
+/* Zurück */
+document.getElementById("backBtn").onclick = () => {
+    location.reload();
+};
+
+/* === THREE.js Setup === */
+
+let rendererLeft = new THREE.WebGLRenderer({ antialias: true });
+rendererLeft.setSize(window.innerWidth, window.innerHeight);
+document.getElementById("leftView").appendChild(rendererLeft.domElement);
+
+let rendererRight = new THREE.WebGLRenderer({ antialias: true });
+rendererRight.setSize(window.innerWidth, window.innerHeight);
+document.getElementById("rightView").appendChild(rendererRight.domElement);
+
+let sceneLeft = new THREE.Scene();
+let sceneRight = new THREE.Scene();
+
+let camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
+camera.position.set(800, 500, 800);
+
+/* Gemeinsame Controls */
+let controls = new THREE.OrbitControls(camera, document.body);
+controls.enableDamping = true;
+
+/* Loader */
 let loader = new THREE.GLTFLoader();
 
-let modelSingle = null;
-let modelLeft = null;
-let modelRight = null;
+let currentLeftModel, currentRightModel;
 
-let comparing = false;
+/* Laden */
+function loadLeftModel(year) {
+    if (currentLeftModel) sceneLeft.remove(currentLeftModel);
 
-
-/* ================================
-   INIT NORMAL MODE
-================================ */
-function initScene() {
-    scene = new THREE.Scene();
-
-    camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 500);
-    camera.position.set(0, 1.2, 2.5);
-
-    rendererSingle = new THREE.WebGLRenderer({ antialias: true });
-    rendererSingle.setSize(window.innerWidth, window.innerHeight);
-    document.body.appendChild(rendererSingle.domElement);
-
-    controls = new THREE.OrbitControls(camera, rendererSingle.domElement);
-
-    let light = new THREE.HemisphereLight(0xffffff, 0x444444, 1.2);
-    scene.add(light);
-
-    animate();
-}
-
-initScene();
-
-
-/* ================================
-   LOAD SINGLE MODEL
-================================ */
-function loadSingle(file) {
-    comparing = false;
-    document.getElementById("compareWrapper").style.display = "none";
-
-    if (rendererLeft) rendererLeft.domElement.style.display = "none";
-    if (rendererRight) rendererRight.domElement.style.display = "none";
-
-    if (modelSingle) scene.remove(modelSingle);
-
-    loader.load(file, gltf => {
-        modelSingle = gltf.scene;
-        modelSingle.position.set(0, 0, 0);
-        scene.add(modelSingle);
+    loader.load(`/models/${year}/scene.gltf`, gltf => {
+        currentLeftModel = gltf.scene;
+        sceneLeft.add(gltf.scene);
     });
 }
 
+function loadRightModel(year) {
+    if (currentRightModel) sceneRight.remove(currentRightModel);
 
-/* ================================
-   START COMPARE MODE (TWO MODELS)
-================================ */
-function startCompare(fileLeft, fileRight) {
-    comparing = true;
-
-    document.getElementById("compareWrapper").style.display = "block";
-
-    if (!rendererLeft) {
-        rendererLeft = new THREE.WebGLRenderer({ antialias: true });
-        rendererRight = new THREE.WebGLRenderer({ antialias: true });
-
-        rendererLeft.setSize(window.innerWidth, window.innerHeight);
-        rendererRight.setSize(window.innerWidth, window.innerHeight);
-
-        document.getElementById("leftView").appendChild(rendererLeft.domElement);
-        document.getElementById("rightView").appendChild(rendererRight.domElement);
-    }
-
-    // load left model
-    if (modelLeft) scene.remove(modelLeft);
-    loader.load(fileLeft, gltf => {
-        modelLeft = gltf.scene;
-        modelLeft.position.set(0, 0, 0);
-        scene.add(modelLeft);
-    });
-
-    // load right model
-    if (modelRight) scene.remove(modelRight);
-    loader.load(fileRight, gltf => {
-        modelRight = gltf.scene;
-        modelRight.position.set(0, 0, 0);
-        scene.add(modelRight);
+    loader.load(`/models/${year}/scene.gltf`, gltf => {
+        currentRightModel = gltf.scene;
+        sceneRight.add(gltf.scene);
     });
 }
 
+/* Buttons im Vergleich */
+document.querySelectorAll(".leftYear").forEach(btn => {
+    btn.onclick = () => loadLeftModel(btn.dataset.year);
+});
 
-/* ================================
-   SLIDER CONTROL
-================================ */
-const slider = document.getElementById("slider");
+document.querySelectorAll(".rightYear").forEach(btn => {
+    btn.onclick = () => loadRightModel(btn.dataset.year);
+});
 
+/* Slider bewegen */
+let slider = document.getElementById("sliderLine");
 let dragging = false;
 
-slider.addEventListener("mousedown", () => dragging = true);
-document.addEventListener("mouseup", () => dragging = false);
-document.addEventListener("mousemove", e => {
+slider.onmousedown = () => dragging = true;
+document.onmouseup = () => dragging = false;
+
+document.onmousemove = e => {
     if (!dragging) return;
-
-    let x = e.clientX;
+    let x = Math.max(0, Math.min(window.innerWidth, e.clientX));
     slider.style.left = x + "px";
-    document.getElementById("rightView").style.width = x + "px";
-});
 
+    let perc = x / window.innerWidth * 100;
+    document.getElementById("leftView").style.clipPath = `inset(0 ${100 - perc}% 0 0)`;
+    document.getElementById("rightView").style.clipPath = `inset(0 0 0 ${perc}%)`;
+};
 
-/* ================================
-   ANIMATION LOOP
-================================ */
+/* Render Loop */
 function animate() {
     requestAnimationFrame(animate);
-
-    if (!comparing) {
-        rendererSingle.render(scene, camera);
-    } else {
-        rendererLeft.render(scene, camera);
-        rendererRight.render(scene, camera);
-    }
-
     controls.update();
+    rendererLeft.render(sceneLeft, camera);
+    rendererRight.render(sceneRight, camera);
 }
+animate();
 
-
-/* ================================
-   RESIZE
-================================ */
-window.addEventListener("resize", () => {
+/* Resize */
+window.onresize = () => {
     camera.aspect = window.innerWidth / window.innerHeight;
     camera.updateProjectionMatrix();
-
-    rendererSingle.setSize(window.innerWidth, window.innerHeight);
-
-    if (rendererLeft) rendererLeft.setSize(window.innerWidth, window.innerHeight);
-    if (rendererRight) rendererRight.setSize(window.innerWidth, window.innerHeight);
-});
+    rendererLeft.setSize(window.innerWidth, window.innerHeight);
+    rendererRight.setSize(window.innerWidth, window.innerHeight);
+};
 </script>
 
 </body>
