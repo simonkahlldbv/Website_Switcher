@@ -27,7 +27,7 @@ html, body {
   background: #1e1e1e;
   color: #fff;
   padding: 20px;
-  z-index: 20;
+  z-index: 100; /* UI always on top */
   overflow-y: auto;
 }
 .year-btn {
@@ -63,6 +63,7 @@ html, body {
   right: 0;
   bottom: 0;
   background: #eaeaea;
+  z-index: 1;
 }
 
 /* COMPARE MODE */
@@ -74,10 +75,10 @@ html, body {
   right: 0;
   bottom: 0;
   background: white;
-  z-index: 99;
+  z-index: 50;
 }
 
-/* back button */
+/* BACK BUTTON */
 #compare-back {
   position: absolute;
   top: 15px;
@@ -88,10 +89,10 @@ html, body {
   border: none;
   border-radius: 6px;
   cursor: pointer;
-  z-index: 200;
+  z-index: 200; /* above canvases */
 }
 
-/* LEFT+RIGHT YEAR LISTS IN COMPARE MODE */
+/* YEAR SELECTORS LEFT + RIGHT */
 .side-list {
   position: absolute;
   top: 50%;
@@ -99,7 +100,7 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  z-index: 200;
+  z-index: 200; /* above canvases */
 }
 #left-list  { left: 20px; }
 #right-list { right: 20px; text-align: right; }
@@ -114,28 +115,26 @@ html, body {
 }
 .side-list button:hover { background:#444; }
 
-/* The TWO CANVASES stacked */
+/* TWO CANVASES stacked */
 .compare-canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  z-index: 50;
-  display: block;
+  z-index: 50; /* behind slider + UI */
 }
 
-/* clipping for left + right half */
 #canvas-left  { clip-path: inset(0 50% 0 0); }
 #canvas-right { clip-path: inset(0 0 0 50%); }
 
-/* vertical slider */
+/* SLIDER */
 #compare-slider {
   position: absolute;
   top: 0;
   width: 6px;
   height: 100%;
   background: red;
-  z-index: 150;
+  z-index: 150; /* above canvas but below side lists */
   cursor: ew-resize;
   left: 50%;
   transform: translateX(-3px);
@@ -149,7 +148,6 @@ html, body {
 <!-- SIDEBAR -->
 <div id="sidebar">
   <h2>Modelle</h2>
-
   <div id="year-list"></div>
   <button id="compare-btn">Vergleichen</button>
 </div>
@@ -186,7 +184,7 @@ const MODELS = [
 ];
 
 /* ===========================
-   CREATE MODEL BUTTONS
+   CREATE YEAR BUTTONS
    =========================== */
 const yearList = document.getElementById("year-list");
 MODELS.forEach(name => {
@@ -198,24 +196,22 @@ MODELS.forEach(name => {
 });
 
 /* ===========================
-   MAIN VIEW (single model)
+   MAIN VIEW
    =========================== */
-
 let mainRenderer, mainScene, mainCamera, mainControls, mainModel;
 initMainView();
-loadMainModel(MODELS[0]); // start with first
+loadMainModel(MODELS[0]); // show first model initially
 
 function initMainView() {
   const canvas = document.getElementById("main-canvas");
   mainRenderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-  mainRenderer.setSize(window.innerWidth - 220, window.innerHeight);
+  resizeMain();
 
   mainScene = new THREE.Scene();
-  const light = new THREE.AmbientLight(0xffffff, 1);
-  mainScene.add(light);
+  mainScene.add(new THREE.AmbientLight(0xffffff, 1));
 
   mainCamera = new THREE.PerspectiveCamera(45, canvas.clientWidth / canvas.clientHeight, 0.1, 2000);
-  mainCamera.position.set(0, 150, 300);
+  mainCamera.position.set(0,150,300);
 
   mainControls = new THREE.OrbitControls(mainCamera, canvas);
   mainControls.enableDamping = true;
@@ -223,15 +219,19 @@ function initMainView() {
   animateMain();
 }
 
+function resizeMain() {
+  mainRenderer.setSize(window.innerWidth - 220, window.innerHeight);
+}
+
 function animateMain() {
   requestAnimationFrame(animateMain);
-  if (mainControls) mainControls.update();
+  mainControls.update();
   mainRenderer.render(mainScene, mainCamera);
 }
 
-function loadMainModel(filename) {
+function loadMainModel(file) {
   const loader = new THREE.GLTFLoader();
-  loader.load(filename, gltf => {
+  loader.load(file, gltf => {
     if (mainModel) mainScene.remove(mainModel);
     mainModel = gltf.scene;
     mainScene.add(mainModel);
@@ -241,20 +241,28 @@ function loadMainModel(filename) {
 /* ===========================
    COMPARE MODE
    =========================== */
-
 const compareBtn = document.getElementById("compare-btn");
 const compareWrapper = document.getElementById("compare-wrapper");
 const compareBack = document.getElementById("compare-back");
 
-/* left + right canvases */
 let rendererL, rendererR;
 let sceneL, sceneR;
 let camL, camR;
 let controlsL, controlsR;
-
 let modelLeft, modelRight;
 
-/* build year selector in compare mode */
+compareBtn.onclick = () => {
+  compareWrapper.style.display = "block";
+  buildCompareLists();
+  initCompareView();
+  loadLeftModel(MODELS[0]);
+  loadRightModel(MODELS[MODELS.length - 1]);
+};
+
+compareBack.onclick = () => {
+  compareWrapper.style.display = "none";
+};
+
 function buildCompareLists() {
   const L = document.getElementById("left-list");
   const R = document.getElementById("right-list");
@@ -264,32 +272,18 @@ function buildCompareLists() {
   MODELS.forEach(file => {
     const y = file.replace(".glb", "");
 
-    let btnL = document.createElement("button");
+    const btnL = document.createElement("button");
     btnL.textContent = y;
     btnL.onclick = () => loadLeftModel(file);
     L.appendChild(btnL);
 
-    let btnR = document.createElement("button");
+    const btnR = document.createElement("button");
     btnR.textContent = y;
     btnR.onclick = () => loadRightModel(file);
     R.appendChild(btnR);
   });
 }
 
-compareBtn.onclick = () => {
-  compareWrapper.style.display = "block";
-  buildCompareLists();
-  initCompareView();
-
-  loadLeftModel(MODELS[0]);
-  loadRightModel(MODELS[MODELS.length - 1]);
-};
-
-compareBack.onclick = () => {
-  compareWrapper.style.display = "none";
-};
-
-/* initialize compare renderers */
 function initCompareView() {
   const cL = document.getElementById("canvas-left");
   const cR = document.getElementById("canvas-right");
@@ -299,16 +293,15 @@ function initCompareView() {
 
   const W = window.innerWidth - 220;
   const H = window.innerHeight;
+
   rendererL.setSize(W, H);
   rendererR.setSize(W, H);
 
   sceneL = new THREE.Scene();
   sceneR = new THREE.Scene();
 
-  const lightL = new THREE.AmbientLight(0xffffff, 1);
-  const lightR = new THREE.AmbientLight(0xffffff, 1);
-  sceneL.add(lightL);
-  sceneR.add(lightR);
+  sceneL.add(new THREE.AmbientLight(0xffffff, 1));
+  sceneR.add(new THREE.AmbientLight(0xffffff, 1));
 
   camL = new THREE.PerspectiveCamera(45, W/H, 0.1, 2000);
   camR = new THREE.PerspectiveCamera(45, W/H, 0.1, 2000);
@@ -317,21 +310,18 @@ function initCompareView() {
 
   controlsL = new THREE.OrbitControls(camL, cL);
   controlsR = new THREE.OrbitControls(camR, cR);
+  controlsR.enabled = false;
 
-  controlsR.enabled = false; // only LEFT is user-controlled
-
-  animateCompare();
-
-  // SYNC CAMERA
   controlsL.addEventListener("change", () => {
     camR.position.copy(camL.position);
     camR.rotation.copy(camL.rotation);
     camR.zoom = camL.zoom;
     camR.updateProjectionMatrix();
   });
+
+  animateCompare();
 }
 
-/* load models */
 function loadLeftModel(file) {
   const loader = new THREE.GLTFLoader();
   loader.load(file, gltf => {
@@ -350,16 +340,15 @@ function loadRightModel(file) {
   });
 }
 
-/* compare animation loop */
 function animateCompare() {
   requestAnimationFrame(animateCompare);
-  if (controlsL) controlsL.update();
+  controlsL.update();
   rendererL.render(sceneL, camL);
   rendererR.render(sceneR, camR);
 }
 
 /* ===========================
-   SLIDER CONTROL
+   SLIDER
    =========================== */
 const slider = document.getElementById("compare-slider");
 let dragging = false;
@@ -370,16 +359,18 @@ window.onmouseup = () => dragging = false;
 window.onmousemove = e => {
   if (!dragging) return;
   const W = window.innerWidth - 220;
-  const x = Math.min(Math.max(e.clientX - 220, 10), W - 10);
+  let x = e.clientX - 220;
+  x = Math.max(10, Math.min(W-10, x));
+
   slider.style.left = (x + 220) + "px";
 
   const pct = x / W;
 
-  const canvasL = document.getElementById("canvas-left");
-  const canvasR = document.getElementById("canvas-right");
+  const left = document.getElementById("canvas-left");
+  const right = document.getElementById("canvas-right");
 
-  canvasL.style.clipPath = `inset(0 ${(1-pct)*100}% 0 0)`;
-  canvasR.style.clipPath = `inset(0 0 0 ${pct*100}%)`;
+  left.style.clipPath = `inset(0 ${(1-pct)*100}% 0 0)`;
+  right.style.clipPath = `inset(0 0 0 ${pct*100}%)`;
 };
 </script>
 
