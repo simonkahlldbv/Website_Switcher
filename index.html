@@ -1,4 +1,4 @@
-<!DOCTYPE html> 
+<!DOCTYPE html>
 <html lang="de">
 <head>
 <meta charset="UTF-8">
@@ -127,13 +127,14 @@ html, body {
 #compare-container {
   position: absolute;
   inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .compare-viewer {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  width: 50%;
+  height: 80%;
   --poster-color: transparent;
 }
 
@@ -253,25 +254,15 @@ slider.onmousedown = () => drag = true;
 window.onmouseup = () => drag = false;
 window.onmousemove = e => {
   if (!drag) return;
-  const x = Math.max(50, Math.min(window.innerWidth - 50, e.clientX));
+  const rect = slider.parentElement.getBoundingClientRect();
+  const x = Math.max(rect.left, Math.min(rect.right, e.clientX));
   slider.style.left = x + "px";
-  const pct = x / window.innerWidth * 100;
+  const pct = ((x - rect.left) / rect.width) * 100;
   mvA.style.clipPath = `inset(0 ${100-pct}% 0 0)`;
   mvB.style.clipPath = `inset(0 0 0 ${pct}%)`;
 };
 
-/* bidirectional sync */
-let syncing = false;
-function sync(from, to) {
-  if (syncing) return;
-  syncing = true;
-  to.cameraOrbit = from.cameraOrbit;
-  to.cameraTarget = from.cameraTarget;
-  to.fieldOfView = from.fieldOfView;
-  requestAnimationFrame(() => syncing = false);
-}
-mvA.addEventListener("camera-change", () => sync(mvA, mvB));
-mvB.addEventListener("camera-change", () => sync(mvB, mvA));
+/* Beide Modelle frei bewegbar, keine Sync */
 </script>
 
 </body>
