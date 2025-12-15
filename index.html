@@ -1,327 +1,286 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="utf-8" />
+<meta charset="UTF-8">
 <title>3D Modellvergleich</title>
 
-<!-- model-viewer -->
 <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 
 <style>
-  :root {
-    --sidebar-width: 220px;
-    --accent: #0077ff;
-  }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+}
 
-  html,body{
-    height:100%;
-    margin:0;
-    font-family: Arial, sans-serif;
-    background: #f6f6f6;
-  }
+/* Sidebar */
+#sidebar {
+  width: 220px;
+  background: #1e1e1e;
+  color: white;
+  padding: 20px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+}
 
-  /* SIDEBAR */
-  #sidebar{
-    position:fixed;
-    left:0;
-    top:0;
-    bottom:0;
-    width:var(--sidebar-width);
-    padding:20px;
-    box-sizing:border-box;
-    background:#1e1e1e;
-    color:white;
-    overflow:auto;
-    z-index:50;
-  }
+.year-btn {
+  background: #333;
+  color: white;
+  padding: 12px;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 16px;
+}
 
-  #sidebar h2 { margin:0 0 12px 0; font-size:18px; }
-  .year-btn{
-    display:block;
-    width:100%;
-    padding:10px;
-    margin:8px 0;
-    background:#333;
-    color:white;
-    border:0;
-    border-radius:6px;
-    cursor:pointer;
-    text-align:left;
-    font-size:15px;
-  }
-  .year-btn:hover{ background:#444; }
+.year-btn:hover {
+  background: #555;
+}
 
-  #compare-btn {
-    margin-top:18px;
-    display:block;
-    width:100%;
-    padding:12px;
-    background:var(--accent);
-    color:white;
-    border:0;
-    border-radius:8px;
-    cursor:pointer;
-    font-weight:600;
-    font-size:15px;
-  }
-  #compare-btn:hover{ filter:brightness(.95); }
+#compare-start {
+  margin-top: auto;
+  padding: 14px;
+  font-size: 16px;
+  background: #0066ff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
 
-  /* MAIN VIEW */
-  #main-area{
-    position:fixed;
-    left:var(--sidebar-width);
-    top:0;
-    right:0;
-    bottom:0;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    background:#eaeaea;
-  }
+#compare-start:hover {
+  background: #0050cc;
+}
 
-  model-viewer#main-model{
-    width:80%;
-    height:80%;
-    --poster-color: transparent;
-  }
+/* Main viewer */
+#main-viewer {
+  flex: 1;
+  background: #f2f2f2;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
 
-  /* COMPARE MODE */
-  #compare-wrapper{
-    display:none;
-    position:fixed;
-    left:var(--sidebar-width);
-    top:0;
-    width:calc(100vw - var(--sidebar-width));
-    height:100vh;
-    background:white;
-    z-index:1000;
-    overflow:hidden;
-  }
+#main-viewer model-viewer {
+  width: 80%;
+  height: 80%;
+}
 
-  #compare-back {
-    position:absolute;
-    top:16px;
-    left:16px;
-    z-index:2000;
-    padding:10px 14px;
-    background:#000;
-    color:#fff;
-    border:0;
-    border-radius:6px;
-    cursor:pointer;
-  }
+/* Vergleichsmodus */
+#compare-mode {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: white;
+  display: none;
+  z-index: 9999;
+}
 
-  .side-list {
-    position:absolute;
-    top:50%;
-    transform:translateY(-50%);
-    display:flex;
-    flex-direction:column;
-    gap:10px;
-    z-index:2000;
-    width:160px;
-  }
-  #left-list { left:20px; }
-  #right-list { right:20px; text-align:right; }
+/* Zurück-Button */
+#back-btn {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  background: #222;
+  color: white;
+  border: none;
+  padding: 12px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  z-index: 10000;
+}
 
-  .side-list button {
-    padding:8px 10px;
-    background:#222;
-    color:#fff;
-    border:0;
-    border-radius:6px;
-    cursor:pointer;
-  }
+#back-btn:hover {
+  background: #444;
+}
 
-  #compare-container{
-    position:absolute;
-    inset:0;
-    overflow:hidden;
-  }
+/* Vergleichsbereiche */
+#top-model,
+#bottom-model {
+  position: absolute;
+  width: 100%;
+  height: 50%;
+  overflow: hidden;
+}
 
-  model-viewer.compare-model {
-    position:absolute;
-    inset:0;
-    width:100%;
-    height:100%;
-    --poster-color: transparent;
-    pointer-events:auto;
-  }
+#top-model {
+  top: 0;
+}
 
-  /* Initial half clipping */
-  #model-left  { clip-path: inset(0 50% 0 0); }
-  #model-right { clip-path: inset(0 0 0 50%); }
+#bottom-model {
+  bottom: 0;
+}
 
-  #compare-slider {
-    position:absolute;
-    top:0;
-    height:100%;
-    width:6px;
-    background:#ff3b3b;
-    left:50%;
-    transform:translateX(-3px);
-    cursor:ew-resize;
-    z-index:1500;
-    border-radius:3px;
-  }
+/* Senkrechter Slider */
+#slider {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 4px;
+  height: 100%;
+  background: red;
+  cursor: ew-resize;
+  z-index: 10001;
+}
 
-  model-viewer::part(default-controls){
-    display:none !important;
-  }
+/* Auswahlleisten */
+.selector-left,
+.selector-right {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.selector-left {
+  left: 20px;
+}
+
+.selector-right {
+  right: 20px;
+}
+
+.sel-btn {
+  background: #333;
+  color: white;
+  padding: 10px 14px;
+  border-radius: 6px;
+  border: none;
+  cursor: pointer;
+}
+
+.sel-btn:hover {
+  background: #555;
+}
+
+model-viewer {
+  --poster-color: transparent;
+}
 </style>
 </head>
 <body>
 
-  <!-- Sidebar -->
-  <div id="sidebar">
-    <h2>Modelle</h2>
-    <div id="year-list"></div>
-    <button id="compare-btn">Vergleichen</button>
+<!-- Sidebar -->
+<div id="sidebar">
+  <h3>Modelle</h3>
+
+  <button class="year-btn" onclick="showModel('1150.glb')">1150</button>
+  <button class="year-btn" onclick="showModel('1175.glb')">1175</button>
+  <button class="year-btn" onclick="showModel('1374.glb')">1374</button>
+  <button class="year-btn" onclick="showModel('1550.glb')">1550</button>
+  <button class="year-btn" onclick="showModel('1630.glb')">1630</button>
+  <button class="year-btn" onclick="showModel('1936.glb')">1936</button>
+
+  <button id="compare-start" onclick="startCompare()">Vergleichen</button>
+</div>
+
+<!-- Main viewer -->
+<div id="main-viewer">
+  <model-viewer id="main-model" camera-controls></model-viewer>
+</div>
+
+<!-- Vergleichsmodus -->
+<div id="compare-mode">
+
+  <button id="back-btn" onclick="exitCompare()">← Zurück</button>
+
+  <!-- Top model -->
+  <div id="top-model">
+    <model-viewer id="mvA" camera-controls></model-viewer>
   </div>
 
-  <!-- Main Model -->
-  <div id="main-area">
-    <model-viewer id="main-model"
-      camera-controls
-      interaction-prompt="none">
-    </model-viewer>
+  <!-- Bottom model -->
+  <div id="bottom-model">
+    <model-viewer id="mvB" camera-controls></model-viewer>
   </div>
 
-  <!-- Compare Mode -->
-  <div id="compare-wrapper">
-    <button id="compare-back">← Zurück</button>
+  <!-- Slider -->
+  <div id="slider"></div>
 
-    <div id="left-list" class="side-list"></div>
-    <div id="right-list" class="side-list"></div>
-
-    <div id="compare-container">
-      <model-viewer id="model-left" class="compare-model" camera-controls></model-viewer>
-      <model-viewer id="model-right" class="compare-model" camera-controls></model-viewer>
-    </div>
-
-    <div id="compare-slider"></div>
+  <!-- Auswahl links -->
+  <div class="selector-left">
+    <button class="sel-btn" onclick="loadA('1150.glb')">1150</button>
+    <button class="sel-btn" onclick="loadA('1175.glb')">1175</button>
+    <button class="sel-btn" onclick="loadA('1374.glb')">1374</button>
+    <button class="sel-btn" onclick="loadA('1550.glb')">1550</button>
+    <button class="sel-btn" onclick="loadA('1630.glb')">1630</button>
+    <button class="sel-btn" onclick="loadA('1936.glb')">1936</button>
   </div>
+
+  <!-- Auswahl rechts -->
+  <div class="selector-right">
+    <button class="sel-btn" onclick="loadB('1150.glb')">1150</button>
+    <button class="sel-btn" onclick="loadB('1175.glb')">1175</button>
+    <button class="sel-btn" onclick="loadB('1374.glb')">1374</button>
+    <button class="sel-btn" onclick="loadB('1550.glb')">1550</button>
+    <button class="sel-btn" onclick="loadB('1630.glb')">1630</button>
+    <button class="sel-btn" onclick="loadB('1936.glb')">1936</button>
+  </div>
+
+</div>
 
 <script>
-/* Models */
-const MODEL_LIST = [
-  "1150.glb",
-  "1175.glb",
-  "1374.glb",
-  "1550.glb",
-  "1630.glb",
-  "1936.glb"
-];
-
-/* Fill year buttons */
-const yearList = document.getElementById("year-list");
-MODEL_LIST.forEach(fn => {
-  const b = document.createElement("button");
-  b.className = "year-btn";
-  b.textContent = fn.replace(".glb", "");
-  b.onclick = () => mainModel.src = fn;
-  yearList.appendChild(b);
-});
-
-const mainModel = document.getElementById("main-model");
-mainModel.src = MODEL_LIST[0];
-
-/* Compare elements */
-const modelLeft = document.getElementById("model-left");
-const modelRight = document.getElementById("model-right");
-const slider = document.getElementById("compare-slider");
-const compareWrapper = document.getElementById("compare-wrapper");
-const compareContainer = document.getElementById("compare-container");
-
-/* Build compare lists */
-function buildCompareLists() {
-  leftList.innerHTML = "";
-  rightList.innerHTML = "";
-  MODEL_LIST.forEach(fn => {
-    const name = fn.replace(".glb", "");
-    const bl = document.createElement("button");
-    bl.textContent = name;
-    bl.onclick = () => modelLeft.src = fn;
-    leftList.appendChild(bl);
-
-    const br = document.createElement("button");
-    br.textContent = name;
-    br.onclick = () => modelRight.src = fn;
-    rightList.appendChild(br);
-  });
+function showModel(file) {
+  document.getElementById("main-model").src = file;
 }
 
-compareBtn.onclick = () => {
-  compareWrapper.style.display = "block";
-  buildCompareLists();
-  if (!modelLeft.src) modelLeft.src = MODEL_LIST[0];
-  if (!modelRight.src) modelRight.src = MODEL_LIST[1];
-};
+/* Start compare */
+function startCompare() {
+  document.getElementById("compare-mode").style.display = "block";
 
-/* BACK button */
-compareBack.onclick = () => {
-  compareWrapper.style.display = "none";
-};
-
-/* Slider logic */
-function updateClip(x) {
-  const rect = compareContainer.getBoundingClientRect();
-  const width = rect.width;
-
-  const pos = Math.min(Math.max(x - rect.left, 0), width);
-
-  slider.style.left = pos + "px";
-
-  modelLeft.style.clipPath  = `inset(0 ${width - pos}px 0 0)`;
-  modelRight.style.clipPath = `inset(0 0 0 ${pos}px)`;
+  // Standard: beide 1150
+  mvA.src = "1150.glb";
+  mvB.src = "1150.glb";
 }
 
-slider.onmousedown = e => {
-  const move = ev => updateClip(ev.clientX);
-  const up = () => {
-    window.removeEventListener("mousemove", move);
-    window.removeEventListener("mouseup", up);
-  };
-  window.addEventListener("mousemove", move);
-  window.addEventListener("mouseup", up);
-};
-
-/* Camera sync */
-let lockedModel = null;
-let syncing = false;
-
-function syncCam(a, b) {
-  if (syncing) return;
-  syncing = true;
-  b.cameraOrbit = a.cameraOrbit;
-  b.cameraTarget = a.cameraTarget;
-  b.fieldOfView = a.fieldOfView;
-  setTimeout(() => syncing = false, 0);
+/* Exit compare */
+function exitCompare() {
+  document.getElementById("compare-mode").style.display = "none";
 }
 
-/* Detect which model user is controlling */
-function setActive(model) {
-  lockedModel = model;
+/* Load models */
+function loadA(file) { mvA.src = file; }
+function loadB(file) { mvB.src = file; }
+
+/* Slider movement */
+let sliding = false;
+const slider = document.getElementById("slider");
+
+slider.addEventListener("mousedown", () => sliding = true);
+window.addEventListener("mouseup", () => sliding = false);
+window.addEventListener("mousemove", (e) => {
+  if (!sliding) return;
+  let x = Math.max(50, Math.min(window.innerWidth - 50, e.clientX));
+  slider.style.left = x + "px";
+});
+
+/* --- SYNCHRONISIERTE KAMERA BEWEGUNG --- */
+
+const mvA = document.getElementById("mvA");
+const mvB = document.getElementById("mvB");
+
+function syncCamera(event) {
+  let source = event.target;
+  let target = source === mvA ? mvB : mvA;
+
+  let orbit = source.getCameraOrbit();
+  let targetOrbit = `${orbit.theta}rad ${orbit.phi}rad ${orbit.radius}m`;
+
+  target.cameraOrbit = targetOrbit;
+  target.fieldOfView = source.fieldOfView;
 }
 
-["mousedown","touchstart"].forEach(evt=>{
-  modelLeft.addEventListener(evt,()=>setActive(modelLeft));
-  modelRight.addEventListener(evt,()=>setActive(modelRight));
-});
+mvA.addEventListener("camera-change", syncCamera);
+mvB.addEventListener("camera-change", syncCamera);
 
-/* Sync from active model */
-modelLeft.addEventListener("camera-change",()=>{
-  if (lockedModel===modelLeft) syncCam(modelLeft,modelRight);
-});
-modelRight.addEventListener("camera-change",()=>{
-  if (lockedModel===modelRight) syncCam(modelRight,modelLeft);
-});
-
-/* Initial center slider */
-window.onload = () => {
-  const rect = compareContainer.getBoundingClientRect();
-  updateClip(rect.width/2);
-};
 </script>
 </body>
 </html>
