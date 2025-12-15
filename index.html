@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html> 
 <html lang="de">
 <head>
 <meta charset="UTF-8">
@@ -78,19 +78,29 @@ html, body {
   z-index: 1000;
 }
 
-#back {
+#back, #reset {
   position: absolute;
   top: 16px;
-  left: 16px;
-  background: black;
-  color: white;
-  border: none;
   padding: 10px 14px;
   border-radius: 6px;
+  border: none;
   cursor: pointer;
   z-index: 2000;
 }
 
+#back {
+  left: 16px;
+  background: black;
+  color: white;
+}
+
+#reset {
+  left: 120px;
+  background: #444;
+  color: white;
+}
+
+/* selectors */
 .selector {
   position: absolute;
   top: 50%;
@@ -127,7 +137,6 @@ html, body {
   --poster-color: transparent;
 }
 
-/* clipping */
 #mvA { clip-path: inset(0 50% 0 0); }
 #mvB { clip-path: inset(0 0 0 50%); }
 
@@ -144,7 +153,6 @@ html, body {
   z-index: 1500;
 }
 
-/* hide hints */
 model-viewer::part(default-controls) {
   display: none;
 }
@@ -169,6 +177,7 @@ model-viewer::part(default-controls) {
 
 <div id="compare">
   <button id="back">← Zurück</button>
+  <button id="reset">Ausgangslage</button>
 
   <div id="sel-left" class="selector">
     <button onclick="mvA.src='1150.glb'">1150</button>
@@ -189,11 +198,8 @@ model-viewer::part(default-controls) {
   </div>
 
   <div id="compare-container">
-    <model-viewer id="mvA" class="compare-viewer"
-      camera-controls interaction-prompt="none"></model-viewer>
-
-    <model-viewer id="mvB" class="compare-viewer"
-      camera-controls interaction-prompt="none"></model-viewer>
+    <model-viewer id="mvA" class="compare-viewer" camera-controls interaction-prompt="none"></model-viewer>
+    <model-viewer id="mvB" class="compare-viewer" camera-controls interaction-prompt="none"></model-viewer>
   </div>
 
   <div id="slider"></div>
@@ -206,22 +212,40 @@ const mvA = document.getElementById("mvA");
 const mvB = document.getElementById("mvB");
 const slider = document.getElementById("slider");
 
+const INITIAL_ORBIT = "0deg 75deg 2.8m";
+const INITIAL_TARGET = "0m 0m 0m";
+const INITIAL_FOV = "45deg";
+
 mainModel.src = "1150.glb";
 
 function setMain(f) { mainModel.src = f; }
 
 document.getElementById("compare-btn").onclick = () => {
   compare.style.display = "block";
-  mvA.src = "1150.glb";
-  mvB.src = "1936.glb";
-  const orbit = "0deg 75deg 2.8m";
-  mvA.cameraOrbit = orbit;
-  mvB.cameraOrbit = orbit;
+  resetView();
 };
 
 document.getElementById("back").onclick = () => {
   compare.style.display = "none";
 };
+
+document.getElementById("reset").onclick = resetView;
+
+function resetView() {
+  mvA.src = "1150.glb";
+  mvB.src = "1936.glb";
+
+  mvA.cameraOrbit = INITIAL_ORBIT;
+  mvB.cameraOrbit = INITIAL_ORBIT;
+  mvA.cameraTarget = INITIAL_TARGET;
+  mvB.cameraTarget = INITIAL_TARGET;
+  mvA.fieldOfView = INITIAL_FOV;
+  mvB.fieldOfView = INITIAL_FOV;
+
+  slider.style.left = "50%";
+  mvA.style.clipPath = "inset(0 50% 0 0)";
+  mvB.style.clipPath = "inset(0 0 0 50%)";
+}
 
 /* Slider */
 let drag = false;
@@ -236,9 +260,8 @@ window.onmousemove = e => {
   mvB.style.clipPath = `inset(0 0 0 ${pct}%)`;
 };
 
-/* === BIDIREKTIONALE SYNCHRONISIERUNG === */
+/* bidirectional sync */
 let syncing = false;
-
 function sync(from, to) {
   if (syncing) return;
   syncing = true;
@@ -247,7 +270,6 @@ function sync(from, to) {
   to.fieldOfView = from.fieldOfView;
   requestAnimationFrame(() => syncing = false);
 }
-
 mvA.addEventListener("camera-change", () => sync(mvA, mvB));
 mvB.addEventListener("camera-change", () => sync(mvB, mvA));
 </script>
