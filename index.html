@@ -37,9 +37,7 @@ body {
   font-size: 16px;
 }
 
-.year-btn:hover {
-  background: #555;
-}
+.year-btn:hover { background: #555; }
 
 #compare-start {
   margin-top: auto;
@@ -50,10 +48,6 @@ body {
   border: none;
   border-radius: 6px;
   cursor: pointer;
-}
-
-#compare-start:hover {
-  background: #0050cc;
 }
 
 /* Main viewer */
@@ -70,54 +64,47 @@ body {
   height: 80%;
 }
 
-/* Vergleichsmodus */
+/* Compare mode */
 #compare-mode {
   position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
+  inset: 0;
   background: white;
   display: none;
   z-index: 9999;
 }
 
-/* Zurück-Button */
 #back-btn {
   position: absolute;
   top: 20px;
   left: 20px;
+  z-index: 10000;
   background: #222;
   color: white;
   border: none;
   padding: 12px 16px;
   border-radius: 6px;
   cursor: pointer;
-  z-index: 10000;
 }
 
-#back-btn:hover {
-  background: #444;
-}
-
-/* Vergleichsbereiche */
-#top-model,
-#bottom-model {
+/* Model container (deckungsgleich) */
+#compare-container {
   position: absolute;
+  inset: 0;
+}
+
+model-viewer.compare {
+  position: absolute;
+  inset: 0;
   width: 100%;
-  height: 50%;
-  overflow: hidden;
+  height: 100%;
+  --poster-color: transparent;
 }
 
-#top-model {
-  top: 0;
-}
+/* Clipping */
+#mvA { clip-path: inset(0 50% 0 0); }
+#mvB { clip-path: inset(0 0 0 50%); }
 
-#bottom-model {
-  bottom: 0;
-}
-
-/* Senkrechter Slider */
+/* Slider */
 #slider {
   position: absolute;
   top: 0;
@@ -129,24 +116,19 @@ body {
   z-index: 10001;
 }
 
-/* Auswahlleisten */
-.selector-left,
-.selector-right {
+/* Selectors */
+.selector-left, .selector-right {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
   flex-direction: column;
   gap: 10px;
+  z-index: 10002;
 }
 
-.selector-left {
-  left: 20px;
-}
-
-.selector-right {
-  right: 20px;
-}
+.selector-left { left: 20px; }
+.selector-right { right: 20px; }
 
 .sel-btn {
   background: #333;
@@ -156,22 +138,14 @@ body {
   border: none;
   cursor: pointer;
 }
-
-.sel-btn:hover {
-  background: #555;
-}
-
-model-viewer {
-  --poster-color: transparent;
-}
 </style>
 </head>
+
 <body>
 
 <!-- Sidebar -->
 <div id="sidebar">
   <h3>Modelle</h3>
-
   <button class="year-btn" onclick="showModel('1150.glb')">1150</button>
   <button class="year-btn" onclick="showModel('1175.glb')">1175</button>
   <button class="year-btn" onclick="showModel('1374.glb')">1374</button>
@@ -182,30 +156,22 @@ model-viewer {
   <button id="compare-start" onclick="startCompare()">Vergleichen</button>
 </div>
 
-<!-- Main viewer -->
+<!-- Main -->
 <div id="main-viewer">
   <model-viewer id="main-model" camera-controls></model-viewer>
 </div>
 
-<!-- Vergleichsmodus -->
+<!-- Compare -->
 <div id="compare-mode">
-
   <button id="back-btn" onclick="exitCompare()">← Zurück</button>
 
-  <!-- Top model -->
-  <div id="top-model">
-    <model-viewer id="mvA" camera-controls></model-viewer>
+  <div id="compare-container">
+    <model-viewer id="mvA" class="compare" camera-controls></model-viewer>
+    <model-viewer id="mvB" class="compare" camera-controls></model-viewer>
   </div>
 
-  <!-- Bottom model -->
-  <div id="bottom-model">
-    <model-viewer id="mvB" camera-controls></model-viewer>
-  </div>
-
-  <!-- Slider -->
   <div id="slider"></div>
 
-  <!-- Auswahl links -->
   <div class="selector-left">
     <button class="sel-btn" onclick="loadA('1150.glb')">1150</button>
     <button class="sel-btn" onclick="loadA('1175.glb')">1175</button>
@@ -215,7 +181,6 @@ model-viewer {
     <button class="sel-btn" onclick="loadA('1936.glb')">1936</button>
   </div>
 
-  <!-- Auswahl rechts -->
   <div class="selector-right">
     <button class="sel-btn" onclick="loadB('1150.glb')">1150</button>
     <button class="sel-btn" onclick="loadB('1175.glb')">1175</button>
@@ -224,63 +189,56 @@ model-viewer {
     <button class="sel-btn" onclick="loadB('1630.glb')">1630</button>
     <button class="sel-btn" onclick="loadB('1936.glb')">1936</button>
   </div>
-
 </div>
 
 <script>
+const mvA = document.getElementById("mvA");
+const mvB = document.getElementById("mvB");
+const slider = document.getElementById("slider");
+
 function showModel(file) {
   document.getElementById("main-model").src = file;
 }
 
-/* Start compare */
 function startCompare() {
   document.getElementById("compare-mode").style.display = "block";
-
-  // Standard: beide 1150
   mvA.src = "1150.glb";
   mvB.src = "1150.glb";
 }
 
-/* Exit compare */
 function exitCompare() {
   document.getElementById("compare-mode").style.display = "none";
 }
 
-/* Load models */
 function loadA(file) { mvA.src = file; }
 function loadB(file) { mvB.src = file; }
 
-/* Slider movement */
-let sliding = false;
-const slider = document.getElementById("slider");
-
-slider.addEventListener("mousedown", () => sliding = true);
-window.addEventListener("mouseup", () => sliding = false);
-window.addEventListener("mousemove", (e) => {
-  if (!sliding) return;
+/* Slider logic */
+let dragging = false;
+slider.addEventListener("mousedown", () => dragging = true);
+window.addEventListener("mouseup", () => dragging = false);
+window.addEventListener("mousemove", e => {
+  if (!dragging) return;
   let x = Math.max(50, Math.min(window.innerWidth - 50, e.clientX));
   slider.style.left = x + "px";
+  mvA.style.clipPath = `inset(0 ${window.innerWidth - x}px 0 0)`;
+  mvB.style.clipPath = `inset(0 0 0 ${x}px)`;
 });
 
-/* --- SYNCHRONISIERTE KAMERA BEWEGUNG --- */
-
-const mvA = document.getElementById("mvA");
-const mvB = document.getElementById("mvB");
-
-function syncCamera(event) {
-  let source = event.target;
-  let target = source === mvA ? mvB : mvA;
-
-  let orbit = source.getCameraOrbit();
-  let targetOrbit = `${orbit.theta}rad ${orbit.phi}rad ${orbit.radius}m`;
-
-  target.cameraOrbit = targetOrbit;
+/* Camera sync (Option C) */
+let syncing = false;
+function sync(source, target) {
+  if (syncing) return;
+  syncing = true;
+  target.cameraOrbit = source.cameraOrbit;
+  target.cameraTarget = source.cameraTarget;
   target.fieldOfView = source.fieldOfView;
+  setTimeout(() => syncing = false, 0);
 }
 
-mvA.addEventListener("camera-change", syncCamera);
-mvB.addEventListener("camera-change", syncCamera);
-
+mvA.addEventListener("camera-change", () => sync(mvA, mvB));
+mvB.addEventListener("camera-change", () => sync(mvB, mvA));
 </script>
+
 </body>
 </html>
