@@ -16,7 +16,7 @@ html, body {
   overflow: hidden;
 }
 
-/* ===== SIDEBAR ===== */
+/* Sidebar */
 #sidebar {
   position: fixed;
   left: 0;
@@ -27,10 +27,6 @@ html, body {
   color: white;
   padding: 20px;
   box-sizing: border-box;
-}
-
-#sidebar h2 {
-  margin-top: 0;
 }
 
 .year-btn {
@@ -44,10 +40,6 @@ html, body {
   cursor: pointer;
 }
 
-.year-btn:hover {
-  background: #555;
-}
-
 #compare-btn {
   margin-top: 20px;
   padding: 12px;
@@ -57,15 +49,14 @@ html, body {
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 15px;
 }
 
-/* ===== MAIN VIEW ===== */
+/* Main */
 #main {
   position: fixed;
   left: 220px;
-  top: 0;
   right: 0;
+  top: 0;
   bottom: 0;
   background: #eee;
   display: flex;
@@ -78,21 +69,20 @@ html, body {
   height: 80%;
 }
 
-/* ===== COMPARE MODE ===== */
+/* Compare mode */
 #compare {
   position: fixed;
   inset: 0;
   background: white;
   display: none;
-  z-index: 999;
+  z-index: 1000;
 }
 
-/* Back button */
 #back {
   position: absolute;
   top: 16px;
   left: 16px;
-  background: #000;
+  background: black;
   color: white;
   border: none;
   padding: 10px 14px;
@@ -101,7 +91,6 @@ html, body {
   z-index: 2000;
 }
 
-/* Year selectors */
 .selector {
   position: absolute;
   top: 50%;
@@ -138,11 +127,11 @@ html, body {
   --poster-color: transparent;
 }
 
-/* Clipping */
+/* clipping */
 #mvA { clip-path: inset(0 50% 0 0); }
 #mvB { clip-path: inset(0 0 0 50%); }
 
-/* Slider */
+/* slider */
 #slider {
   position: absolute;
   top: 0;
@@ -155,7 +144,7 @@ html, body {
   z-index: 1500;
 }
 
-/* remove interaction hints */
+/* hide hints */
 model-viewer::part(default-controls) {
   display: none;
 }
@@ -164,30 +153,21 @@ model-viewer::part(default-controls) {
 
 <body>
 
-<!-- Sidebar -->
 <div id="sidebar">
-  <h2>Modelle</h2>
   <button class="year-btn" onclick="setMain('1150.glb')">1150</button>
   <button class="year-btn" onclick="setMain('1175.glb')">1175</button>
   <button class="year-btn" onclick="setMain('1374.glb')">1374</button>
   <button class="year-btn" onclick="setMain('1550.glb')">1550</button>
   <button class="year-btn" onclick="setMain('1630.glb')">1630</button>
   <button class="year-btn" onclick="setMain('1936.glb')">1936</button>
-
   <button id="compare-btn">Vergleichen</button>
 </div>
 
-<!-- Main -->
 <div id="main">
-  <model-viewer id="mainModel"
-    camera-controls
-    interaction-prompt="none">
-  </model-viewer>
+  <model-viewer id="mainModel" camera-controls interaction-prompt="none"></model-viewer>
 </div>
 
-<!-- Compare -->
 <div id="compare">
-
   <button id="back">← Zurück</button>
 
   <div id="sel-left" class="selector">
@@ -210,13 +190,10 @@ model-viewer::part(default-controls) {
 
   <div id="compare-container">
     <model-viewer id="mvA" class="compare-viewer"
-      camera-controls
-      interaction-prompt="none">
-    </model-viewer>
+      camera-controls interaction-prompt="none"></model-viewer>
 
     <model-viewer id="mvB" class="compare-viewer"
-      interaction-prompt="none">
-    </model-viewer>
+      camera-controls interaction-prompt="none"></model-viewer>
   </div>
 
   <div id="slider"></div>
@@ -231,16 +208,15 @@ const slider = document.getElementById("slider");
 
 mainModel.src = "1150.glb";
 
-function setMain(file) {
-  mainModel.src = file;
-}
+function setMain(f) { mainModel.src = f; }
 
-/* Compare open/close */
 document.getElementById("compare-btn").onclick = () => {
   compare.style.display = "block";
   mvA.src = "1150.glb";
   mvB.src = "1936.glb";
-  setInitialCamera();
+  const orbit = "0deg 75deg 2.8m";
+  mvA.cameraOrbit = orbit;
+  mvB.cameraOrbit = orbit;
 };
 
 document.getElementById("back").onclick = () => {
@@ -248,11 +224,11 @@ document.getElementById("back").onclick = () => {
 };
 
 /* Slider */
-let dragging = false;
-slider.onmousedown = () => dragging = true;
-window.onmouseup = () => dragging = false;
+let drag = false;
+slider.onmousedown = () => drag = true;
+window.onmouseup = () => drag = false;
 window.onmousemove = e => {
-  if (!dragging) return;
+  if (!drag) return;
   const x = Math.max(50, Math.min(window.innerWidth - 50, e.clientX));
   slider.style.left = x + "px";
   const pct = x / window.innerWidth * 100;
@@ -260,23 +236,20 @@ window.onmousemove = e => {
   mvB.style.clipPath = `inset(0 0 0 ${pct}%)`;
 };
 
-/* Camera sync (ONE direction) */
+/* === BIDIREKTIONALE SYNCHRONISIERUNG === */
 let syncing = false;
-mvA.addEventListener("camera-change", () => {
+
+function sync(from, to) {
   if (syncing) return;
   syncing = true;
-  mvB.cameraOrbit = mvA.cameraOrbit;
-  mvB.cameraTarget = mvA.cameraTarget;
-  mvB.fieldOfView = mvA.fieldOfView;
+  to.cameraOrbit = from.cameraOrbit;
+  to.cameraTarget = from.cameraTarget;
+  to.fieldOfView = from.fieldOfView;
   requestAnimationFrame(() => syncing = false);
-});
-
-/* Stable start */
-function setInitialCamera() {
-  const orbit = "0deg 75deg 2.8m";
-  mvA.cameraOrbit = orbit;
-  mvB.cameraOrbit = orbit;
 }
+
+mvA.addEventListener("camera-change", () => sync(mvA, mvB));
+mvB.addEventListener("camera-change", () => sync(mvB, mvA));
 </script>
 
 </body>
