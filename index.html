@@ -230,6 +230,7 @@ document.getElementById("back").onclick = () => {
   compare.style.display = "none";
 };
 
+/* Ausgangslage Button */
 document.getElementById("reset").onclick = resetView;
 
 function resetView() {
@@ -261,7 +262,7 @@ window.onmousemove = e => {
   mvB.style.clipPath = `inset(0 0 0 ${pct}%)`;
 };
 
-/* Keine bidirektionale Kamera-Synchronisation mehr */
+/* Modelle bleiben nach dem Bewegen in Position – keine Synchronisation */
 </script>
 
 </body>
